@@ -114,6 +114,9 @@ class RNNLM(object):
 
         opt = tf.train.AdagradOptimizer(self.learning_rate)
         gradients = tf.gradients(self.loss, params, colocate_gradients_with_ops=True)
+        
+        [self.embedding_lookup_grad] = tf.gradients(self.loss, [self.input_embedding_mat], colocate_gradients_with_ops=True)
+        
         clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
         self.updates = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
 
@@ -132,7 +135,7 @@ class RNNLM(object):
             while True:
 
                 try:
-                    _loss, _valid_words, _, i, o = sess.run([self.loss, self.valid_words, self.updates, self.input_batch, self.output_batch], {self.dropout_rate: 0.5})
+                    _loss, _valid_words, _, i, o, grad = sess.run([self.loss, self.valid_words, self.updates, self.input_batch, self.output_batch, self.embedding_lookup_grad], {self.dropout_rate: 0.5})
                     
                     # print (len(i))
                     # print (len(o))                    
