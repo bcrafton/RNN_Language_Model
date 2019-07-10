@@ -134,47 +134,42 @@ class RNNLM(object):
             train_valid_words = 0
             while True:
 
-                try:
-                    _loss, _valid_words, _, i, o, grad = sess.run([self.loss, self.valid_words, self.updates, self.input_batch, self.output_batch, self.embedding_lookup_grad], {self.dropout_rate: 0.5})
-                    
-                    # print (len(i))
-                    # print (len(o))                    
+                _loss, _valid_words, _, i, o, grad = sess.run([self.loss, self.valid_words, self.updates, self.input_batch, self.output_batch, self.embedding_lookup_grad], {self.dropout_rate: 0.5})
+                
+                # print (len(i))
+                # print (len(o))                    
 
-                    for sentence in i:
-                        print (np.count_nonzero(sentence == 0), np.count_nonzero(sentence), len(sentence))
+                for sentence in i:
+                    pass
+                    # print (np.count_nonzero(sentence == 0), np.count_nonzero(sentence), len(sentence))
 
-                    count = 0
-                    for sentence in i:
-                        count += len(sentence)
-                    # print (count)
+                count = 0
+                for sentence in i:
+                    count += len(sentence)
+                # print (count)
 
-                    count = 0
-                    for sentence in o:
-                        count += len(sentence)
-                    # print (count)
+                count = 0
+                for sentence in o:
+                    count += len(sentence)
+                # print (count)
 
-                    print (i[0])
-                    print (o[0])
+                # print (i[0])
+                # print (o[0])
 
-                    assert (False)
+                assert (False)
 
-                    train_loss += np.sum(_loss)
-                    train_valid_words += _valid_words
+                train_loss += np.sum(_loss)
+                train_valid_words += _valid_words
 
-                    if global_step % self.check_point_step == 0:
+                if global_step % self.check_point_step == 0:
 
-                        train_loss /= train_valid_words
-                        train_ppl = math.exp(train_loss)
-                        print ("Training Step: {}, LR: {}".format(global_step, current_learning_rate))
-                        print ("    Training PPL: {}".format(train_ppl))
+                    train_loss /= train_valid_words
+                    train_ppl = math.exp(train_loss)
+                    print ("Training Step: {}, LR: {}".format(global_step, current_learning_rate))
+                    print ("    Training PPL: {}".format(train_ppl))
 
-                        train_loss = 0.0
-                        train_valid_words = 0
-
-
-                except tf.errors.OutOfRangeError:
-                    # The end of one epoch
-                    break
+                    train_loss = 0.0
+                    train_valid_words = 0
 
 
             sess.run(self.validation_init_op, {self.file_name_validation: "./data/valid.ids"})
