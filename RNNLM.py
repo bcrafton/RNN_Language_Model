@@ -19,7 +19,7 @@ class RNNLM(object):
                  ):
 
         self.vocab_size = vocab_size
-        self.batch_size = 1 # batch_size
+        self.batch_size = batch_size
         self.num_epochs = num_epochs
         self.check_point_step = check_point_step
         self.num_train_samples = num_train_samples
@@ -53,11 +53,11 @@ class RNNLM(object):
 
             return input_seq, output_seq
 
-        # training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).shuffle(256).padded_batch(self.batch_size, padded_shapes=([None], [None]))
-        # validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).padded_batch(self.batch_size, padded_shapes=([None], [None]))
+        training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).padded_batch(self.batch_size, padded_shapes=([None], [None]))
+        validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).padded_batch(self.batch_size, padded_shapes=([None], [None]))
         
-        training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).batch(1)
-        validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).batch(1)
+        # training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).batch(1)
+        # validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).batch(1)
         test_dataset = tf.data.TextLineDataset(self.file_name_test).map(parse).batch(1)
 
         iterator = tf.data.Iterator.from_structure(training_dataset.output_types, training_dataset.output_shapes)
@@ -71,7 +71,7 @@ class RNNLM(object):
         # Input embedding mat
         self.input_embedding_mat = tf.get_variable("input_embedding_mat", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
         self.input_embedding_bias = tf.zeros(shape=(self.batch_size, 25, self.num_hidden_units))
-        self.input_embedded = tf.nn.embedding_lookup(self.input_embedding_mat, self.input_batch) + self.input_embedding_bias
+        self.input_embedded = tf.nn.embedding_lookup(self.input_embedding_mat, self.input_batch) # + self.input_embedding_bias
         # self.input_embedded = tf.Print(self.input_embedded, [tf.shape(self.input_embedded)], message='', summarize=1000)
 
         # LSTM cell
@@ -120,8 +120,8 @@ class RNNLM(object):
         opt = tf.train.AdagradOptimizer(self.learning_rate)
         gradients = tf.gradients(self.loss, params, colocate_gradients_with_ops=True)
         
-        [self.lu_grad] = tf.gradients(self.loss, [self.input_embedding_mat], colocate_gradients_with_ops=True)
-        [self.lu_bias_grad] = tf.gradients(self.loss, [self.input_embedding_bias], colocate_gradients_with_ops=True)        
+        # [self.lu_grad] = tf.gradients(self.loss, [self.input_embedding_mat], colocate_gradients_with_ops=True)
+        # [self.lu_bias_grad] = tf.gradients(self.loss, [self.input_embedding_bias], colocate_gradients_with_ops=True)        
 
         clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
         self.updates = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
@@ -140,14 +140,15 @@ class RNNLM(object):
             train_valid_words = 0
             while True:
 
-                _loss, _valid_words, _, i, o, grad1, grad2 = sess.run([self.loss, self.valid_words, self.updates, self.input_batch, self.output_batch, self.lu_grad, self.lu_bias_grad], {self.dropout_rate: 0.5})
-                
+                # _loss, _valid_words, _, i, o, grad1, grad2 = sess.run([self.loss, self.valid_words, self.updates, self.input_batch, self.output_batch, self.lu_grad, self.lu_bias_grad], {self.dropout_rate: 0.5})
+                _loss, _valid_words, _, global_step, i, o = sess.run([self.loss, self.valid_words, self.updates, self.global_step, self.input_batch, self.output_batch], {self.dropout_rate: 0.5})
+                '''
                 print (np.shape(grad1[0]), np.shape(grad1[1]), np.shape(grad1[2]))
                 print (np.shape(grad2))
 
                 print (grad2[0][0]) # [batch]    [time][hidden]
                 print (grad1[0][0]) # [grad comp][time][hidden]
-
+                '''
                 '''
                 print (np.shape(grad1))
                 print (np.shape(grad1[0]), np.shape(grad1[1]), np.shape(grad1[2]))
@@ -175,7 +176,10 @@ class RNNLM(object):
                 # print (i[0])
                 # print (o[0])
 
-                assert (False)
+                # print (np.shape(i))
+                # print (np.shape(o))
+
+                # assert (False)
 
                 train_loss += np.sum(_loss)
                 train_valid_words += _valid_words
@@ -184,7 +188,7 @@ class RNNLM(object):
 
                     train_loss /= train_valid_words
                     train_ppl = math.exp(train_loss)
-                    print ("Training Step: {}, LR: {}".format(global_step, current_learning_rate))
+                    # print ("Training Step: {}, LR: {}".format(global_step, current_learning_rate))
                     print ("    Training PPL: {}".format(train_ppl))
 
                     train_loss = 0.0
