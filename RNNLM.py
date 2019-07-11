@@ -48,11 +48,41 @@ class RNNLM(object):
         self.file_name_validation = tf.placeholder(tf.string)
         self.file_name_test = tf.placeholder(tf.string)
 
+        ######################################
+
+        '''
         def parse(line):
             line_split = tf.string_split([line])
             input_seq = tf.string_to_number(line_split.values[:-1], out_type=tf.int32)
             output_seq = tf.string_to_number(line_split.values[1:], out_type=tf.int32)
             return input_seq, output_seq
+        '''
+        
+        def parse(line):
+            '''
+            padded_batch(
+                batch_size,
+                padded_shapes,        # looks like we can do something with this actually. force a certain size ?
+                padding_values=None,
+                drop_remainder=False)
+            '''
+
+            line_split = tf.string_split([line])
+
+            input_seq = tf.string_to_number(line_split.values[:-1], out_type=tf.int32)
+            output_seq = tf.string_to_number(line_split.values[1:], out_type=tf.int32)
+
+            input_seq = input_seq[0:64]
+            output_seq = output_seq[0:64]
+
+            shape = tf.shape(input_seq)
+
+            input_seq = tf.pad(input_seq,   [[0, 64 - shape[0]]])
+            output_seq = tf.pad(output_seq, [[0, 64 - shape[0]]])
+
+            return input_seq, output_seq
+            
+        ######################################
 
         training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).shuffle(256).padded_batch(self.batch_size, padded_shapes=([None], [None]))
         validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).padded_batch(self.batch_size, padded_shapes=([None], [None]))
@@ -67,8 +97,8 @@ class RNNLM(object):
         self.test_init_op = iterator.make_initializer(test_dataset)
 
         embed = Embedded(input_size=self.vocab_size, output_size=self.num_hidden_units)
-        lstm1 = LSTM(input_shape=(None, self.batch_size, self.num_hidden_units), size=self.num_hidden_units)
-        lstm2 = LSTM(input_shape=(None, self.batch_size, self.num_hidden_units), size=self.num_hidden_units)
+        lstm1 = LSTM(input_shape=(64, self.batch_size, self.num_hidden_units), size=self.num_hidden_units)
+        lstm2 = LSTM(input_shape=(64, self.batch_size, self.num_hidden_units), size=self.num_hidden_units)
         dense = Dense(input_shape=self.num_hidden_units, size=self.vocab_size)
         
         layers = [embed, lstm1, lstm2, dense]
