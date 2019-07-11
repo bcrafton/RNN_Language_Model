@@ -80,6 +80,9 @@ class RNNLM(object):
             input_seq = tf.pad(input_seq,   [[0, 64 - shape[0]]])
             output_seq = tf.pad(output_seq, [[0, 64 - shape[0]]])
 
+            # input_seq = tf.Print(input_seq, [tf.shape(input_seq), tf.shape(output_seq)], message='', summarize=1000)
+            # input_seq = tf.Print(input_seq, [tf.reduce_max(input_seq), tf.reduce_max(output_seq)], message='', summarize=1000)
+
             return input_seq, output_seq
             
         ######################################
