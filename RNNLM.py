@@ -52,7 +52,7 @@ class RNNLM(object):
         validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).padded_batch(self.batch_size, padded_shapes=([None], [None]))
         test_dataset = tf.data.TextLineDataset(self.file_name_test).map(parse).batch(1)
 
-        iterator = tf.contrib.data.Iterator.from_structure(training_dataset.output_types,
+        iterator = tf.data.Iterator.from_structure(training_dataset.output_types,
                                               training_dataset.output_shapes)
 
         self.input_batch, self.output_batch = iterator.get_next()
@@ -151,8 +151,8 @@ class RNNLM(object):
 
                         train_loss /= train_valid_words
                         train_ppl = math.exp(train_loss)
-                        print "Training Step: {}, LR: {}".format(global_step, current_learning_rate)
-                        print "    Training PPL: {}".format(train_ppl)
+                        print ("Training Step: {}, LR: {}".format(global_step, current_learning_rate))
+                        print ("    Training PPL: {}".format(train_ppl))
 
                         train_loss = 0.0
                         train_valid_words = 0
@@ -178,7 +178,7 @@ class RNNLM(object):
                 except tf.errors.OutOfRangeError:
                     dev_loss /= dev_valid_words
                     dev_ppl = math.exp(dev_loss)
-                    print "Validation PPL: {}".format(dev_ppl)
+                    print ("Validation PPL: {}".format(dev_ppl))
                     if dev_ppl < best_score:
                         patience = 5
                         saver.save(sess, "model/best_model.ckpt")
@@ -218,9 +218,9 @@ class RNNLM(object):
                 if verbose:
                     dev_loss /= dev_valid_words
                     dev_ppl = math.exp(dev_loss)
-                    print raw_line + "    Test PPL: {}".format(dev_ppl)
+                    print (raw_line + "    Test PPL: {}".format(dev_ppl))
 
             global_dev_loss /= global_dev_valid_words
             global_dev_ppl = math.exp(global_dev_loss)
-            print "Global Test PPL: {}".format(global_dev_ppl)
+            print ("Global Test PPL: {}".format(global_dev_ppl))
 
