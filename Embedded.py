@@ -38,12 +38,31 @@ class Embedded(Layer):
         # shape i = (64, 49)
         # shape o = (64, 49) # this output after a softmax tho.
         
+        shape = tf.shape(X)
+        X = tf.reshape(X, [-1])
         A = tf.nn.embedding_lookup(self.weights, X)
-        return A
+        A = tf.reshape(A, [shape[0], shape[1], self.output_size])
+
+        return A, None
             
-    def backward(self, AI, AO, DO):
-        return None
+    def backward(self, AI, AO, DO, cache):
+        # one of the 4 set branches:
+        # https://github.com/bcrafton/dfa/blob/set_conv_sign/SparseFC.py
+
+        # gonna need one of these two.
+        # https://www.tensorflow.org/api_docs/python/tf/scatter_update
+        # https://www.tensorflow.org/api_docs/python/tf/scatter_nd
+        # think these are same thing ... they dont do +=
+
+        AI = tf.reshape(AI, [-1])
+        DO = tf.reshape(DO, [-1, self.output_size])
+
+        # DW = tf.scatter_update(tf.zeros_like(self.weights), AI, DO)
+        DW = tf.zeros_like(self.weights)
+
+        return None, [(DW, self.weights)]
         
+    '''
     def gv(self, AI, AO, DO):
         # one of the 4 set branches:
         # https://github.com/bcrafton/dfa/blob/set_conv_sign/SparseFC.py
@@ -55,6 +74,7 @@ class Embedded(Layer):
     
         DW = tf.scatter_update(tf.zeros_like(w), AI, DO)
         return [(DW, self.weights)]
+    '''
 
     ###################################################################
         

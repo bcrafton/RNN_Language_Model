@@ -43,6 +43,9 @@ class Dense(Layer):
         DO = DO * self.activation.gradient(AO)
         DI = tf.matmul(DO, tf.transpose(self.weights))
 
+        AI = tf.reshape(AI, [-1, self.input_shape])
+        DO = tf.reshape(DO, [-1, self.size])
+
         DW = tf.matmul(tf.transpose(AI), DO)
         DB = tf.reduce_sum(DO, axis=0)
         

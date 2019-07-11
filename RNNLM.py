@@ -166,8 +166,8 @@ class RNNLM(object):
         # batch x features x depth if axis == -1
         Y = tf.one_hot(self.output_batch, depth=self.vocab_size, axis=-1)
         
-        gvs, loss = model.train(X=X, Y=Y)
-        train = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs)
+        gvs, self.loss = self.model.train(X=X, Y=Y)
+        self.train = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs)
 
     def batch_train(self, sess, saver):
 
@@ -183,7 +183,7 @@ class RNNLM(object):
             
             while True:
                 try:
-                    _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates], {self.dropout_rate: 0.5})
+                    _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train], {self.dropout_rate: 0.5})
                     train_loss += np.sum(_loss)
                     train_valid_words += _valid_words
 
@@ -202,7 +202,7 @@ class RNNLM(object):
                     # The end of one epoch
                     break
 
-
+            '''
             sess.run(self.validation_init_op, {self.file_name_validation: "./data/valid.ids"})
             dev_loss = 0.0
             dev_valid_words = 0
@@ -230,6 +230,7 @@ class RNNLM(object):
                         epoch = self.num_epochs
 
                     break
+            '''
 
     def predict(self, sess, input_file, raw_file, verbose=False):
         # if verbose is true, then we print the ppl of every sequence

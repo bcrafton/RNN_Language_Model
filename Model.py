@@ -23,7 +23,11 @@ class Model:
 
         N = tf.shape(A[self.num_layers-1])[0]
         N = tf.cast(N, dtype=tf.float32)
-        E = (tf.nn.softmax(A[self.num_layers-1]) - Y) / N
+
+        pred = A[self.num_layers-1]
+
+        E = (tf.nn.softmax(pred) - Y) / N
+        loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y, logits=pred)
 
         for ii in range(self.num_layers-1, -1, -1):
             l = self.layers[ii]
@@ -38,7 +42,7 @@ class Model:
                 D[ii], G = l.backward(A[ii-1], A[ii], D[ii+1], C[ii])
                 grads_and_vars.extend(G)
                 
-        return grads_and_vars
+        return grads_and_vars, loss
               
     def predict(self, X):
         A = [None] * self.num_layers
