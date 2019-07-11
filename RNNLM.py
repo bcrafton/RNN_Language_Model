@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+np.set_printoptions(threshold=np.inf)
 import math
 
 class RNNLM(object):
@@ -31,10 +32,8 @@ class RNNLM(object):
 
         # We set a dynamic learining rate, it decays every time the model has gone through 150 batches.
         # A minimum learning rate has also been set.
-        self.learning_rate = tf.train.exponential_decay(initial_learning_rate, self.global_step,
-                                           150, 0.96, staircase=True)
-        self.learning_rate = tf.cond(tf.less(self.learning_rate, final_learning_rate), lambda: tf.constant(final_learning_rate),
-                                     lambda: self.learning_rate)
+        self.learning_rate = tf.train.exponential_decay(initial_learning_rate, self.global_step, 150, 0.96, staircase=True)
+        self.learning_rate = tf.cond(tf.less(self.learning_rate, final_learning_rate), lambda: tf.constant(final_learning_rate), lambda: self.learning_rate)
 
         self.dropout_rate = tf.placeholder(tf.float32, name="dropout_rate")
 
@@ -52,8 +51,7 @@ class RNNLM(object):
         validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).padded_batch(self.batch_size, padded_shapes=([None], [None]))
         test_dataset = tf.data.TextLineDataset(self.file_name_test).map(parse).batch(1)
 
-        iterator = tf.data.Iterator.from_structure(training_dataset.output_types,
-                                              training_dataset.output_shapes)
+        iterator = tf.data.Iterator.from_structure(training_dataset.output_types, training_dataset.output_shapes)
 
         self.input_batch, self.output_batch = iterator.get_next()
 
@@ -63,10 +61,7 @@ class RNNLM(object):
 
 
         # Input embedding mat
-        self.input_embedding_mat = tf.get_variable("input_embedding_mat",
-                                                   [self.vocab_size, self.num_hidden_units],
-                                                   dtype=tf.float32)
-
+        self.input_embedding_mat = tf.get_variable("input_embedding_mat", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
         self.input_embedded = tf.nn.embedding_lookup(self.input_embedding_mat, self.input_batch)
 
         # LSTM cell
@@ -77,13 +72,8 @@ class RNNLM(object):
         self.cell = cell
 
         # Output embedding
-        self.output_embedding_mat = tf.get_variable("output_embedding_mat",
-                                                    [self.vocab_size, self.num_hidden_units],
-                                                    dtype=tf.float32)
-
-        self.output_embedding_bias = tf.get_variable("output_embedding_bias",
-                                                     [self.vocab_size],
-                                                     dtype=tf.float32)
+        self.output_embedding_mat = tf.get_variable("output_embedding_mat", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
+        self.output_embedding_bias = tf.get_variable("output_embedding_bias", [self.vocab_size], dtype=tf.float32)
 
         non_zero_weights = tf.sign(self.input_batch)
         self.valid_words = tf.reduce_sum(non_zero_weights)
@@ -98,22 +88,17 @@ class RNNLM(object):
 
 
         # The shape of outputs is [batch_size, max_length, num_hidden_units]
-        outputs, _ = tf.nn.dynamic_rnn(
-            cell=self.cell,
-            inputs=self.input_embedded,
-            sequence_length=batch_length,
-            dtype=tf.float32
-        )
+        outputs, _ = tf.nn.dynamic_rnn(cell=self.cell, inputs=self.input_embedded, sequence_length=batch_length, dtype=tf.float32)
 
         def output_embedding(current_output):
-            return tf.add(
-                tf.matmul(current_output, tf.transpose(self.output_embedding_mat)), self.output_embedding_bias)
+            return tf.add(tf.matmul(current_output, tf.transpose(self.output_embedding_mat)), self.output_embedding_bias)
 
         # To compute the logits
+        labels = tf.reshape(self.output_batch, [-1])
+        
         logits = tf.map_fn(output_embedding, outputs)
         logits = tf.reshape(logits, [-1, vocab_size])
-        loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.reshape(self.output_batch, [-1]), logits=logits) \
-               * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
+        loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
 
         self.loss = loss
 
