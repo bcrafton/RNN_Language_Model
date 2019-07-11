@@ -22,6 +22,9 @@ class Embedded(Layer):
         weights = init_matrix(size=(self.input_size, self.output_size), init='glorot_normal')
         self.weights = tf.Variable(weights, dtype=tf.float32)
 
+        zeros = np.zeros(shape=(self.input_size, self.output_size))
+        self.zeros = tf.Variable(zeros, dtype=tf.float32)
+
     ###################################################################
         
     def get_weights(self):
@@ -57,8 +60,9 @@ class Embedded(Layer):
         AI = tf.reshape(AI, [-1])
         DO = tf.reshape(DO, [-1, self.output_size])
 
-        # DW = tf.scatter_update(tf.zeros_like(self.weights), AI, DO)
-        DW = tf.zeros_like(self.weights)
+        DW = tf.scatter_update(self.zeros, AI, DO)
+        # DW = tf.zeros_like(self.weights)
+        # DW = tf.Print(DW, [tf.shape(AI), tf.shape(DO)], message='', summarize=1000)
 
         return None, [(DW, self.weights)]
         

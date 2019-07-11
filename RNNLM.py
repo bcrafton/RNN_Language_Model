@@ -167,7 +167,8 @@ class RNNLM(object):
         Y = tf.one_hot(self.output_batch, depth=self.vocab_size, axis=-1)
         
         gvs, self.loss = self.model.train(X=X, Y=Y)
-        self.train = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs)
+        # self.train = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
+        self.train = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
 
     def batch_train(self, sess, saver):
 
