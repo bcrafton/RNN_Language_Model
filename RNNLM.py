@@ -103,7 +103,7 @@ class RNNLM(object):
         logits = tf.map_fn(output_embedding, outputs)
         logits = tf.reshape(logits, [-1, vocab_size])
 
-        logits = tf.Print(logits, [tf.shape(logits), tf.shape(labels)], message='', summarize=1000)
+        # logits = tf.Print(logits, [tf.shape(logits), tf.shape(labels)], message='', summarize=1000)
 
         # because of how many 0==0 we will have, this makes me question our perplexity score here.
         loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
@@ -132,8 +132,10 @@ class RNNLM(object):
             while True:
 
                 try:
-                    _loss, _valid_words, _, i, o = sess.run([self.loss, self.valid_words, self.updates, self.input_batch, self.output_batch], {self.dropout_rate: 0.5})
-                    
+                    # _loss, _valid_words, _, i, o = sess.run([self.loss, self.valid_words, self.updates, self.input_batch, self.output_batch], {self.dropout_rate: 0.5})
+                    _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates], {self.dropout_rate: 0.5})
+
+                    '''
                     # print (len(i))
                     # print (len(o))                    
 
@@ -154,6 +156,7 @@ class RNNLM(object):
                     print (o[0])
 
                     assert (False)
+                    '''
 
                     train_loss += np.sum(_loss)
                     train_valid_words += _valid_words
