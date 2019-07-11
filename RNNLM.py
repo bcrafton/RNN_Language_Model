@@ -1,7 +1,14 @@
+
 import tensorflow as tf
 import numpy as np
 np.set_printoptions(threshold=np.inf)
 import math
+
+from Embedded import Embedded
+from Layer import Layer 
+from LSTM import LSTM 
+from Dense import Dense
+from Model import Model
 
 class RNNLM(object):
     def __init__(self,
@@ -59,7 +66,15 @@ class RNNLM(object):
         self.validation_init_op = iterator.make_initializer(validation_dataset)
         self.test_init_op = iterator.make_initializer(test_dataset)
 
+        embed = Embedded(input_size=self.vocab_size, output_size=self.num_hidden_units)
+        lstm1 = LSTM(input_shape=(None, self.batch_size, self.num_hidden_units), size=self.num_hidden_units)
+        lstm2 = LSTM(input_shape=(None, self.batch_size, self.num_hidden_units), size=self.num_hidden_units)
+        dense = Dense(input_shape=self.num_hidden_units, size=self.vocab_size)
+        
+        layers = [embed, lstm1, lstm2, dense]
+        self.model = Model(layers=layers)
 
+        '''
         # Input embedding mat
         self.input_embedding_mat = tf.get_variable("input_embedding_mat", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
         self.input_embedded = tf.nn.embedding_lookup(self.input_embedding_mat, self.input_batch)
@@ -74,7 +89,8 @@ class RNNLM(object):
         # Output embedding
         self.output_embedding_mat = tf.get_variable("output_embedding_mat", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
         self.output_embedding_bias = tf.get_variable("output_embedding_bias", [self.vocab_size], dtype=tf.float32)
-
+        '''
+        
         non_zero_weights = tf.sign(self.input_batch)
         self.valid_words = tf.reduce_sum(non_zero_weights)
 
@@ -86,31 +102,42 @@ class RNNLM(object):
 
         batch_length = get_length(non_zero_weights)
 
-
+        '''
         # The shape of outputs is [batch_size, max_length, num_hidden_units]
         outputs, _ = tf.nn.dynamic_rnn(cell=self.cell, inputs=self.input_embedded, sequence_length=batch_length, dtype=tf.float32)
 
         def output_embedding(current_output):
             return tf.add(tf.matmul(current_output, tf.transpose(self.output_embedding_mat)), self.output_embedding_bias)
-
+        '''
+        
+        '''
         # To compute the logits
         labels = tf.reshape(self.output_batch, [-1])
         
         logits = tf.map_fn(output_embedding, outputs)
         logits = tf.reshape(logits, [-1, vocab_size])
         loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
-
         self.loss = loss
-
+        '''
+        
+        '''
         # Train
-
         params = tf.trainable_variables()
 
         opt = tf.train.AdagradOptimizer(self.learning_rate)
         gradients = tf.gradients(self.loss, params, colocate_gradients_with_ops=True)
         clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
         self.updates = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
-
+        '''
+        
+        X = self.input_batch
+        # https://www.tensorflow.org/api_docs/python/tf/one_hot
+        # If indices is a matrix (batch) with shape [batch, features], the output shape will be:
+        # batch x features x depth if axis == -1
+        Y = tf.one_hot(self.output_batch, depth=self.vocab_size, axis=-1)
+        
+        gvs, loss = model.train(X=X, Y=Y)
+        train = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs)
 
     def batch_train(self, sess, saver):
 
@@ -123,12 +150,10 @@ class RNNLM(object):
             sess.run(self.trining_init_op, {self.file_name_train: "./data/train.ids"})
             train_loss = 0.0
             train_valid_words = 0
+            
             while True:
-
                 try:
-                    _loss, _valid_words, global_step, current_learning_rate, _ = sess.run(
-                        [self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates],
-                        {self.dropout_rate: 0.5})
+                    _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates], {self.dropout_rate: 0.5})
                     train_loss += np.sum(_loss)
                     train_valid_words += _valid_words
 
