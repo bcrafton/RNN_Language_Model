@@ -4,7 +4,9 @@ import numpy as np
 np.set_printoptions(threshold=1000)
 
 class Model:
-    def __init__(self, layers):
+    def __init__(self, batch_size, time_size, layers):
+        self.batch_size = batch_size
+        self.time_size = time_size
         self.num_layers = len(layers)
         self.layers = layers
         
@@ -26,8 +28,14 @@ class Model:
 
         pred = A[self.num_layers-1]
 
+        '''
         E = (tf.nn.softmax(pred) - Y) / N
         loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y, logits=pred)
+        '''
+        zeros = tf.cast(tf.sign(X), dtype=tf.float32)
+        zeros = tf.reshape(zeros, [self.batch_size, self.time_size, 1])
+        E = ((tf.nn.softmax(pred) - Y) / N) * zeros
+        loss = tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.argmax(Y, axis=2), logits=pred) * tf.reshape(zeros, [self.batch_size, self.time_size]))
 
         for ii in range(self.num_layers-1, -1, -1):
             l = self.layers[ii]

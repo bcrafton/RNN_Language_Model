@@ -107,7 +107,7 @@ class RNNLM(object):
         dense = Dense(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.vocab_size)
         
         layers = [embed, lstm1, lstm2, dense]
-        self.model = Model(layers=layers)
+        self.model = Model(batch_size=self.batch_size, time_size=self.time_size, layers=layers)
 
         '''
         # Input embedding mat
