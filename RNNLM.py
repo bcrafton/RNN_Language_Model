@@ -8,6 +8,7 @@ from Embedded import Embedded
 from Layer import Layer 
 from LSTM import LSTM 
 from Dense import Dense
+from Dropout import Dropout
 from Model import Model
 
 class RNNLM(object):
@@ -103,10 +104,12 @@ class RNNLM(object):
 
         embed = Embedded(input_shape=(self.batch_size, self.time_size, self.vocab_size), output_size=self.num_hidden_units)
         lstm1 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
+        dropout1 = Dropout(rate=self.dropout_rate)
         lstm2 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
+        dropout2 = Dropout(rate=self.dropout_rate)
         dense = Dense(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.vocab_size)
         
-        layers = [embed, lstm1, lstm2, dense]
+        layers = [embed, lstm1, dropout1, lstm2, dropout2, dense]
         self.model = Model(batch_size=self.batch_size, time_size=self.time_size, layers=layers)
 
         '''
@@ -211,7 +214,7 @@ class RNNLM(object):
             
             for _ in range(0, self.num_valid_samples, self.batch_size):
 
-                _dev_loss, _dev_valid_words = sess.run([self.loss, self.valid_words], {self.dropout_rate: 1.0})
+                _dev_loss, _dev_valid_words = sess.run([self.loss, self.valid_words], {self.dropout_rate: 0.0})
                 dev_loss += np.sum(_dev_loss)
                 dev_valid_words += _dev_valid_words
 
@@ -235,7 +238,7 @@ class RNNLM(object):
 
                 raw_line = raw_line.strip()
 
-                _dev_loss, _dev_valid_words, input_line = sess.run([self.loss, self.valid_words, self.input_batch], {self.dropout_rate: 1.0})
+                _dev_loss, _dev_valid_words, input_line = sess.run([self.loss, self.valid_words, self.input_batch], {self.dropout_rate: 0.0})
 
                 dev_loss = np.sum(_dev_loss)
                 dev_valid_words = _dev_valid_words

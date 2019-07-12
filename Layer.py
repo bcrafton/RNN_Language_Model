@@ -20,10 +20,7 @@ class Layer:
     def forward(self, X):
         assert(False)    
         
-    def backward(self, AI, AO, DO):    
-        assert(False)
-
-    def train(self, AI, AO, DO):    
+    def backward(self, AI, AO, DO, cache):    
         assert(False)
                 
     ###################################################################   
