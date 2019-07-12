@@ -28,7 +28,7 @@ class LSTM(Layer):
 
     def __init__(self, input_shape, size, init='glorot_normal', return_sequences=True):
         self.input_shape = input_shape
-        self.time_size, self.batch_size, self.input_size = self.input_shape
+        self.batch_size, self.time_size, self.input_size = self.input_shape
         self.output_size = size
         self.init = init
         self.return_sequences = return_sequences
@@ -82,17 +82,24 @@ class LSTM(Layer):
             print (np.shape(X))
             assert(np.shape(X) == (self.time_size, self.batch_size, self.input_size))
         '''
-        
+
+        X = tf.Print(X, [tf.shape(X)], message='LSTM: ', summarize=1000)        
+
         la = [None] * self.time_size
         li = [None] * self.time_size
         lf = [None] * self.time_size
         lo = [None] * self.time_size
         ls = [None] * self.time_size
         lh = [None] * self.time_size
+
+        X_T = tf.transpose(X, (1, 0, 2))
         
         for t in range(self.time_size):
-            x = X[t]
-            
+            # x = X[:, t]
+            # x = tf.slice(X, [0, t, 0], [32, 1, 600])
+            x = X_T[t]
+            # x = tf.Print(x, [t, tf.shape(x)], message='', summarize=1000)            
+
             if t == 0:
                 a = tanh(   tf.matmul(x, self.Wa_x) + self.ba) 
                 i = sigmoid(tf.matmul(x, self.Wi_x) + self.bi) 
@@ -114,13 +121,14 @@ class LSTM(Layer):
             else:
                 s = a * i + ls[t-1] * f
                 
-            h = tanh(s) * o
+            h = tf.multiply(tanh(s), o)
+            h = tf.Print(h, ['x', tf.shape(x), 'h', tf.shape(h), 'o', tf.shape(o), 's', tf.shape(s), 'tanh(s)', tf.shape(tanh(s))], message='', summarize=1000)
 
             ls[t] = s
             lh[t] = h
 
-        # [T, B, O]
-        outputs = tf.stack(lh, axis=0)
+        outputs = tf.stack(lh, axis=1)
+        outputs = tf.Print(outputs, [tf.shape(outputs), 'h', tf.shape(h), 'o', tf.shape(o), 's', tf.shape(s)], message='LSTM out: ', summarize=1000)
 
         cache = {}
         cache['a'] = la
@@ -139,9 +147,9 @@ class LSTM(Layer):
     # combining backward and train together
     def backward(self, AI, AO, DO, cache):
         if not self.return_sequences:
-            zeros = tf.zeros(shape=(self.time_size - 1, self.batch_size, self.output_size))
-            DO = tf.reshape(DO, (1, self.batch_size, self.output_size))
-            DO = tf.concat((zeros, DO), axis=0)
+            zeros = tf.zeros(shape=(self.batch_size, self.time_size - 1, self.output_size))
+            DO = tf.reshape(DO, (self.batch_size, 1, self.output_size))
+            DO = tf.concat((zeros, DO), axis=1)
     
         a = cache['a'] 
         i = cache['i'] 
@@ -184,7 +192,7 @@ class LSTM(Layer):
                 df = ds * s[t-1] * dsigmoid(f[t]) 
                 do = dh * tanh(s[t]) * dsigmoid(o[t]) 
             else:
-                dh = DO[t] + dout
+                dh = DO[:, t, :] + dout
                 ds = dh * o[t] * dtanh(tanh(s[t])) + lds[t+1] * f[t+1]
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
@@ -203,10 +211,10 @@ class LSTM(Layer):
             dx_o = tf.matmul(do, tf.transpose(self.Wo_x))
             dx = dx_a + dx_i + dx_f + dx_o
             
-            dWa_x += tf.matmul(tf.transpose(AI[t]), da)
-            dWi_x += tf.matmul(tf.transpose(AI[t]), di)
-            dWf_x += tf.matmul(tf.transpose(AI[t]), df)
-            dWo_x += tf.matmul(tf.transpose(AI[t]), do)
+            dWa_x += tf.matmul(tf.transpose(AI[:, t]), da)
+            dWi_x += tf.matmul(tf.transpose(AI[:, t]), di)
+            dWf_x += tf.matmul(tf.transpose(AI[:, t]), df)
+            dWo_x += tf.matmul(tf.transpose(AI[:, t]), do)
             
             dba += tf.reduce_sum(da, axis=0)
             dbi += tf.reduce_sum(di, axis=0)
@@ -221,6 +229,8 @@ class LSTM(Layer):
                 
             lds[t] = ds
             ldx[t] = dx
+
+        ldx = tf.stack(ldx, axis=1)
 
         dw = [
         (dWa_x, self.Wa_x), (dWi_x, self.Wi_x), (dWf_x, self.Wf_x), (dWo_x, self.Wo_x),

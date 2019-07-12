@@ -80,15 +80,16 @@ class RNNLM(object):
             input_seq = tf.pad(input_seq,   [[0, 64 - shape[0]]])
             output_seq = tf.pad(output_seq, [[0, 64 - shape[0]]])
 
-            # input_seq = tf.Print(input_seq, [tf.shape(input_seq), tf.shape(output_seq)], message='', summarize=1000)
+            # input_seq = tf.Print(input_seq, [shape], message='', summarize=1000)
+            # input_seq = tf.Print(input_seq, ['shape in', tf.shape(input_seq), 'shape out', tf.shape(output_seq)], message='', summarize=1000)
             # input_seq = tf.Print(input_seq, [tf.reduce_max(input_seq), tf.reduce_max(output_seq)], message='', summarize=1000)
 
             return input_seq, output_seq
             
         ######################################
 
-        training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).shuffle(256).padded_batch(self.batch_size, padded_shapes=([None], [None]))
-        validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).padded_batch(self.batch_size, padded_shapes=([None], [None]))
+        training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).batch(self.batch_size)
+        validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).batch(self.batch_size)
         test_dataset = tf.data.TextLineDataset(self.file_name_test).map(parse).batch(1)
 
         iterator = tf.data.Iterator.from_structure(training_dataset.output_types, training_dataset.output_shapes)
@@ -100,8 +101,8 @@ class RNNLM(object):
         self.test_init_op = iterator.make_initializer(test_dataset)
 
         embed = Embedded(input_size=self.vocab_size, output_size=self.num_hidden_units)
-        lstm1 = LSTM(input_shape=(64, self.batch_size, self.num_hidden_units), size=self.num_hidden_units)
-        lstm2 = LSTM(input_shape=(64, self.batch_size, self.num_hidden_units), size=self.num_hidden_units)
+        lstm1 = LSTM(input_shape=(self.batch_size, 64, self.num_hidden_units), size=self.num_hidden_units)
+        lstm2 = LSTM(input_shape=(self.batch_size, 64, self.num_hidden_units), size=self.num_hidden_units)
         dense = Dense(input_shape=self.num_hidden_units, size=self.vocab_size)
         
         layers = [embed, lstm1, lstm2, dense]
@@ -169,9 +170,12 @@ class RNNLM(object):
         # batch x features x depth if axis == -1
         Y = tf.one_hot(self.output_batch, depth=self.vocab_size, axis=-1)
         
-        gvs, self.loss = self.model.train(X=X, Y=Y)
+        # gvs, self.loss = self.model.train(X=X, Y=Y)
         # self.train = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
-        self.train = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
+        # self.train = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
+        
+        self.loss = tf.random_uniform(shape=(1,))
+        self.train = self.model.predict(X=X)
 
     def batch_train(self, sess, saver):
 

@@ -35,7 +35,7 @@ with open("data/vocab") as vocab:
 
 def create_model(sess):
     model = RNNLM(vocab_size=vocab_size,
-                  batch_size=64,
+                  batch_size=32,
                   num_epochs=80,
                   check_point_step=100,
                   num_train_samples=num_train_samples,

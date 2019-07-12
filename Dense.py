@@ -35,20 +35,34 @@ class Dense(Layer):
     ###################################################################
 
     def forward(self, X):
+
+        X = tf.Print(X, [tf.shape(X)], message='Dense: ', summarize=1000)
+
+        shape = tf.shape(X)
+        X = tf.reshape(X, [-1, self.input_shape])
         Z = tf.matmul(X, self.weights) + self.bias
         A = self.activation.forward(Z)
+        A = tf.reshape(A, [shape[0], shape[1], self.size])
+
+        # A = tf.Print(A, [shape, tf.shape(A)], message='', summarize=1000)
+
         return A, None
             
     def backward(self, AI, AO, DO, cache):
-        DO = DO * self.activation.gradient(AO)
-        DI = tf.matmul(DO, tf.transpose(self.weights))
+        shape_in = tf.shape(AI)
+        shape_out = tf.shape(AO)
 
+        AO = tf.reshape(AO, [-1, self.size])
         AI = tf.reshape(AI, [-1, self.input_shape])
         DO = tf.reshape(DO, [-1, self.size])
 
+        DO = DO * self.activation.gradient(AO)
+        DI = tf.matmul(DO, tf.transpose(self.weights))
         DW = tf.matmul(tf.transpose(AI), DO)
         DB = tf.reduce_sum(DO, axis=0)
-        
+
+        DI = tf.reshape(DI, [shape_in[0], shape_in[1], self.input_shape])
+
         return DI, [(DW, self.weights), (DB, self.bias)]
         
     ###################################################################

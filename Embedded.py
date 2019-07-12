@@ -46,6 +46,8 @@ class Embedded(Layer):
         A = tf.nn.embedding_lookup(self.weights, X)
         A = tf.reshape(A, [shape[0], shape[1], self.output_size])
 
+        A = tf.Print(A, [shape, tf.shape(A)], message='embedded: ', summarize=1000)
+
         return A, None
             
     def backward(self, AI, AO, DO, cache):
