@@ -104,12 +104,13 @@ class RNNLM(object):
 
         embed = Embedded(input_shape=(self.batch_size, self.time_size, self.vocab_size), output_size=self.num_hidden_units)
         lstm1 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
-        dropout1 = Dropout(rate=self.dropout_rate)
+        # dropout1 = Dropout(rate=self.dropout_rate)
         lstm2 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
-        dropout2 = Dropout(rate=self.dropout_rate)
+        # dropout2 = Dropout(rate=self.dropout_rate)
         dense = Dense(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.vocab_size)
         
-        layers = [embed, lstm1, dropout1, lstm2, dropout2, dense]
+        # layers = [embed, lstm1, dropout1, lstm2, dropout2, dense]
+        layers = [embed, lstm1, lstm2, dense]
         self.model = Model(batch_size=self.batch_size, time_size=self.time_size, layers=layers)
 
         '''
