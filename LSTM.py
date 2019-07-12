@@ -68,10 +68,35 @@ class LSTM(Layer):
     ###################################################################
         
     def get_weights(self):
-        assert (False)
+        assert(self.name is not None)
+        
+        wax = self.name + '_wax'
+        wix = self.name + '_wix'
+        wfx = self.name + '_wfx'
+        wox = self.name + '_wox'
+        
+        wah = self.name + '_wah'
+        wih = self.name + '_wih'
+        wfh = self.name + '_wfh'
+        woh = self.name + '_woh'
+        
+        ba = self.name + '_ba'
+        bi = self.name + '_bi'
+        bf = self.name + '_bf'
+        bo = self.name + '_bo'
+        
+        wx = [(wax, self.Wa_x), (wix, self.Wi_x), (wfx, self.Wf_x), (wox, self.Wo_x)]
+        wh = [(wah, self.Wa_h), (wih, self.Wi_h), (wfh, self.Wf_h), (woh, self.Wo_h)]
+        b  = [(ba, self.ba), (bi, self.bi), (bf, self.bf), (bo, self.bo)]
+        
+        weights = wx + wh + b
+        return weights
 
     def num_params(self):
-        assert (False)
+        wx_size = 4 * self.input_size * self.output_size
+        wh_size = 4 * self.output_size * self.output_size
+        b_size = 4 * self.output_size
+        return wx_size + wh_size + b_size
 
     ###################################################################
 

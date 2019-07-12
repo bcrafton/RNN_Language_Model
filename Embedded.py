@@ -27,12 +27,14 @@ class Embedded(Layer):
         self.zeros = tf.Variable(zeros, dtype=tf.float32)
 
     ###################################################################
-        
+
     def get_weights(self):
-        assert(False)
+        assert(self.name is not None)
+        return [(self.name, self.weights)]
 
     def num_params(self):
-        assert(False)
+        weights_size = self.input_size * self.output_size
+        return weights_size
 
     ###################################################################
 

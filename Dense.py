@@ -26,10 +26,12 @@ class Dense(Layer):
     ###################################################################
         
     def get_weights(self):
-        assert (False)
+        return [(self.name, self.weights), (self.name + "_bias", self.bias)]
 
     def num_params(self):
-        assert (False)
+        weights_size = self.input_size * self.output_size
+        bias_size = self.output_size
+        return weights_size + bias_size
 
     ###################################################################
 
