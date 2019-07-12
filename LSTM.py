@@ -26,12 +26,13 @@ def dsigmoid(x):
 
 class LSTM(Layer):
 
-    def __init__(self, input_shape, size, init='glorot_normal', return_sequences=True):
+    def __init__(self, input_shape, size, init='glorot_normal', return_sequences=True, name=None):
         self.input_shape = input_shape
         self.batch_size, self.time_size, self.input_size = self.input_shape
         self.output_size = size
         self.init = init
         self.return_sequences = return_sequences
+        self.name = name
         
         # print (self.time_size, self.batch_size, self.input_size, self.output_size)
         

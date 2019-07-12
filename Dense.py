@@ -10,12 +10,13 @@ from init_matrix import init_matrix
 
 class Dense(Layer):
 
-    def __init__(self, input_shape, size, activation=None, init='glorot_normal'):
+    def __init__(self, input_shape, size, activation=None, init='glorot_normal', name=None):
         self.input_shape = input_shape
         self.batch_size, self.time_size, self.input_size = self.input_shape
         self.output_size = size
         self.init = init
         self.activation = Linear() if activation == None else activation
+        self.name = name
 
         bias = np.zeros(shape=self.output_size)
         weights = init_matrix(size=(self.input_size, self.output_size), init=self.init)

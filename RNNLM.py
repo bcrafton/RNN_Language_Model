@@ -102,16 +102,18 @@ class RNNLM(object):
         self.validation_init_op = iterator.make_initializer(validation_dataset)
         self.test_init_op = iterator.make_initializer(test_dataset)
 
-        embed = Embedded(input_shape=(self.batch_size, self.time_size, self.vocab_size), output_size=self.num_hidden_units)
-        lstm1 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
+        embed = Embedded(input_shape=(self.batch_size, self.time_size, self.vocab_size), output_size=self.num_hidden_units, name='embedded')
+        lstm1 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units, name='lstm1')
         # dropout1 = Dropout(rate=self.dropout_rate)
         # lstm2 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
         # dropout2 = Dropout(rate=self.dropout_rate)
-        dense = Dense(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.vocab_size)
+        dense = Dense(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.vocab_size, name='dense1')
         
         # layers = [embed, lstm1, dropout1, lstm2, dropout2, dense]
         layers = [embed, lstm1, dense]
         self.model = Model(batch_size=self.batch_size, time_size=self.time_size, layers=layers)
+
+        self.get_weights = self.model.get_weights()
 
         '''
         # Input embedding mat

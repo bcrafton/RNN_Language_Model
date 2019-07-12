@@ -8,17 +8,12 @@ from init_matrix import init_matrix
 
 class Embedded(Layer):
 
-    def __init__(self, input_shape, output_size, init='glorot_normal', name=None, load=None, train=True):
+    def __init__(self, input_shape, output_size, init='glorot_normal', name=None):
         self.input_shape = input_shape
         self.batch_size, self.time_size, self.input_size = self.input_shape
         self.output_size = output_size
         self.init = init
         self.name = name
-        self.load = load
-        self.train_flag = train
-        
-        assert(not self.load)
-        assert(self.train_flag)
 
         weights = init_matrix(size=(self.input_size, self.output_size), init=self.init)
         self.weights = tf.Variable(weights, dtype=tf.float32)
