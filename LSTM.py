@@ -139,7 +139,7 @@ class LSTM(Layer):
                 s = a * i + ls[t-1] * f
                 
             h = tanh(s) * o
-            h = h * tf.cast(tf.random_uniform(shape=tf.shape(X)) > self.dropout_rate, tf.float32)
+            h = h * tf.cast(tf.random_uniform(shape=tf.shape(h)) > self.dropout_rate, tf.float32)
 
             ls[t] = s
             lh[t] = h
