@@ -8,9 +8,9 @@ from init_matrix import init_matrix
 
 class Embedded(Layer):
 
-    def __init__(self, input_size, output_size, name=None, load=None, train=True):
-    
-        self.input_size = input_size
+    def __init__(self, input_shape, output_size, name=None, load=None, train=True):
+        self.input_shape = input_shape
+        self.batch_size, self.time_size, self.input_size = self.input_shape
         self.output_size = output_size
         self.name = name
         self.load = load
@@ -28,23 +28,20 @@ class Embedded(Layer):
     ###################################################################
         
     def get_weights(self):
-        return [(self.name, self.weights), (self.name + "_bias", self.bias)]
+        assert(False)
 
     def num_params(self):
-        weights_size = self.input_size * self.output_size
-        bias_size = self.output_size
-        return weights_size + bias_size
+        assert(False)
 
     ###################################################################
 
     def forward(self, X):
-        # shape i = (64, 49)
-        # shape o = (64, 49) # this output after a softmax tho.
+        # shape in = (32, 64) ... should be.
         
         shape = tf.shape(X)
-        X = tf.reshape(X, [-1])
+        X = tf.reshape(X, [self.batch_size * self.time_size])
         A = tf.nn.embedding_lookup(self.weights, X)
-        A = tf.reshape(A, [shape[0], shape[1], self.output_size])
+        A = tf.reshape(A, [self.batch_size, self.time_size, self.output_size])
 
         return A, None
             
@@ -57,28 +54,14 @@ class Embedded(Layer):
         # https://www.tensorflow.org/api_docs/python/tf/scatter_nd
         # think these are same thing ... they dont do +=
 
-        AI = tf.reshape(AI, [-1])
-        DO = tf.reshape(DO, [-1, self.output_size])
+        AI = tf.reshape(AI, [self.batch_size * self.time_size])
+        DO = tf.reshape(DO, [self.batch_size * self.time_size, self.output_size])
 
         DW = tf.scatter_update(self.zeros, AI, DO)
         # DW = tf.zeros_like(self.weights)
         # DW = tf.Print(DW, [tf.shape(AI), tf.shape(DO)], message='', summarize=1000)
 
         return None, [(DW, self.weights)]
-        
-    '''
-    def gv(self, AI, AO, DO):
-        # one of the 4 set branches:
-        # https://github.com/bcrafton/dfa/blob/set_conv_sign/SparseFC.py
-        
-        # gonna need one of these two.
-        # https://www.tensorflow.org/api_docs/python/tf/scatter_update
-        # https://www.tensorflow.org/api_docs/python/tf/scatter_nd
-        # think these are same thing ... they dont do +=
-    
-        DW = tf.scatter_update(tf.zeros_like(w), AI, DO)
-        return [(DW, self.weights)]
-    '''
 
     ###################################################################
         

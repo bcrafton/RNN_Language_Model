@@ -28,7 +28,7 @@ class LSTM(Layer):
 
     def __init__(self, input_shape, size, init='glorot_normal', return_sequences=True):
         self.input_shape = input_shape
-        self.time_size, self.batch_size, self.input_size = self.input_shape
+        self.batch_size, self.time_size, self.input_size = self.input_shape
         self.output_size = size
         self.init = init
         self.return_sequences = return_sequences
@@ -76,12 +76,7 @@ class LSTM(Layer):
     ###################################################################
 
     def forward(self, X):
-        # put some tensorflow assertion here to check the shape
-        '''
-        if (np.shape(X) != (self.time_size, self.batch_size, self.input_size)):
-            print (np.shape(X))
-            assert(np.shape(X) == (self.time_size, self.batch_size, self.input_size))
-        '''
+        # check shape(X) = batch, time, input
         
         la = [None] * self.time_size
         li = [None] * self.time_size
@@ -90,8 +85,10 @@ class LSTM(Layer):
         ls = [None] * self.time_size
         lh = [None] * self.time_size
         
+        X_T = tf.transpose(X, [1, 0, 2])
+        
         for t in range(self.time_size):
-            x = X[t]
+            x = X_T[t]
             
             if t == 0:
                 a = tanh(   tf.matmul(x, self.Wa_x) + self.ba) 
@@ -120,7 +117,7 @@ class LSTM(Layer):
             lh[t] = h
 
         # [T, B, O]
-        outputs = tf.stack(lh, axis=0)
+        outputs = tf.stack(lh, axis=1)
 
         cache = {}
         cache['a'] = la
@@ -139,10 +136,17 @@ class LSTM(Layer):
     # combining backward and train together
     def backward(self, AI, AO, DO, cache):
         if not self.return_sequences:
+            assert (False)
+            '''
             zeros = tf.zeros(shape=(self.time_size - 1, self.batch_size, self.output_size))
             DO = tf.reshape(DO, (1, self.batch_size, self.output_size))
             DO = tf.concat((zeros, DO), axis=0)
-    
+            
+            zeros = tf.zeros(shape=(self.batch_size, self.time_size - 1, self.output_size))
+            DO = tf.reshape(DO, (self.batch_size, 1, self.output_size))
+            DO = tf.concat((zeros, DO), axis=1)
+            '''
+            
         a = cache['a'] 
         i = cache['i'] 
         f = cache['f'] 
@@ -168,23 +172,26 @@ class LSTM(Layer):
         dbf = tf.zeros_like(self.bf)
         dbo = tf.zeros_like(self.bo)
 
+        DO_T = tf.transpose(DO, [1, 0, 2])
+        AI_T = tf.transpose(AI, [1, 0, 2])
+
         for t in range(self.time_size-1, -1, -1):
             if t == 0:
-                dh = DO[t] + dout
+                dh = DO_T[t] + dout
                 ds = dh * o[t] * dtanh(tanh(s[t])) + lds[t+1] * f[t+1]
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
                 df = tf.zeros_like(da)
                 do = dh * tanh(s[t]) * dsigmoid(o[t]) 
             elif t == self.time_size-1:
-                dh = DO[t]
+                dh = DO_T[t]
                 ds = dh * o[t] * dtanh(tanh(s[t]))
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
                 df = ds * s[t-1] * dsigmoid(f[t]) 
                 do = dh * tanh(s[t]) * dsigmoid(o[t]) 
             else:
-                dh = DO[t] + dout
+                dh = DO_T[t] + dout
                 ds = dh * o[t] * dtanh(tanh(s[t])) + lds[t+1] * f[t+1]
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
@@ -203,10 +210,10 @@ class LSTM(Layer):
             dx_o = tf.matmul(do, tf.transpose(self.Wo_x))
             dx = dx_a + dx_i + dx_f + dx_o
             
-            dWa_x += tf.matmul(tf.transpose(AI[t]), da)
-            dWi_x += tf.matmul(tf.transpose(AI[t]), di)
-            dWf_x += tf.matmul(tf.transpose(AI[t]), df)
-            dWo_x += tf.matmul(tf.transpose(AI[t]), do)
+            dWa_x += tf.matmul(tf.transpose(AI_T[t]), da)
+            dWi_x += tf.matmul(tf.transpose(AI_T[t]), di)
+            dWf_x += tf.matmul(tf.transpose(AI_T[t]), df)
+            dWo_x += tf.matmul(tf.transpose(AI_T[t]), do)
             
             dba += tf.reduce_sum(da, axis=0)
             dbi += tf.reduce_sum(di, axis=0)
@@ -221,6 +228,8 @@ class LSTM(Layer):
                 
             lds[t] = ds
             ldx[t] = dx
+
+        ldx = tf.stack(ldx, axis=1)
 
         dw = [
         (dWa_x, self.Wa_x), (dWi_x, self.Wi_x), (dWf_x, self.Wf_x), (dWo_x, self.Wo_x),

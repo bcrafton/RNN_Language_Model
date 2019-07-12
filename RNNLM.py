@@ -14,6 +14,7 @@ class RNNLM(object):
     def __init__(self,
                  vocab_size,
                  batch_size,
+                 time_size,
                  num_epochs,
                  check_point_step,
                  num_train_samples,
@@ -27,6 +28,7 @@ class RNNLM(object):
 
         self.vocab_size = vocab_size
         self.batch_size = batch_size
+        self.time_size = time_size
         self.num_epochs = num_epochs
         self.check_point_step = check_point_step
         self.num_train_samples = num_train_samples
@@ -87,8 +89,8 @@ class RNNLM(object):
             
         ######################################
 
-        training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).shuffle(256).padded_batch(self.batch_size, padded_shapes=([None], [None]))
-        validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).padded_batch(self.batch_size, padded_shapes=([None], [None]))
+        training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).batch(self.batch_size)
+        validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).batch(self.batch_size)
         test_dataset = tf.data.TextLineDataset(self.file_name_test).map(parse).batch(1)
 
         iterator = tf.data.Iterator.from_structure(training_dataset.output_types, training_dataset.output_shapes)
@@ -99,10 +101,10 @@ class RNNLM(object):
         self.validation_init_op = iterator.make_initializer(validation_dataset)
         self.test_init_op = iterator.make_initializer(test_dataset)
 
-        embed = Embedded(input_size=self.vocab_size, output_size=self.num_hidden_units)
-        lstm1 = LSTM(input_shape=(64, self.batch_size, self.num_hidden_units), size=self.num_hidden_units)
-        lstm2 = LSTM(input_shape=(64, self.batch_size, self.num_hidden_units), size=self.num_hidden_units)
-        dense = Dense(input_shape=self.num_hidden_units, size=self.vocab_size)
+        embed = Embedded(input_shape=(self.batch_size, self.time_size, self.vocab_size), output_size=self.num_hidden_units)
+        lstm1 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
+        lstm2 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
+        dense = Dense(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.vocab_size)
         
         layers = [embed, lstm1, lstm2, dense]
         self.model = Model(layers=layers)
