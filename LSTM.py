@@ -47,7 +47,7 @@ class LSTM(Layer):
         
         ba = np.zeros(shape=self.output_size)
         bi = np.zeros(shape=self.output_size)
-        bf = np.zeros(shape=self.output_size)
+        bf = np.ones(shape=self.output_size)
         bo = np.zeros(shape=self.output_size)
         
         self.Wa_x = tf.Variable(Wa_x, dtype=tf.float32)
