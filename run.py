@@ -43,7 +43,7 @@ def create_model(sess):
                   num_valid_samples=num_valid_samples,
                   num_layers=2,
                   num_hidden_units=600,
-                  initial_learning_rate=1.0,
+                  initial_learning_rate=0.05,
                   final_learning_rate=0.0005,
                   max_gradient_norm=5.0,
                   )
