@@ -105,12 +105,12 @@ class RNNLM(object):
         embed = Embedded(input_shape=(self.batch_size, self.time_size, self.vocab_size), output_size=self.num_hidden_units)
         lstm1 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
         # dropout1 = Dropout(rate=self.dropout_rate)
-        lstm2 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
+        # lstm2 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
         # dropout2 = Dropout(rate=self.dropout_rate)
         dense = Dense(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.vocab_size)
         
         # layers = [embed, lstm1, dropout1, lstm2, dropout2, dense]
-        layers = [embed, lstm1, lstm2, dense]
+        layers = [embed, lstm1, dense]
         self.model = Model(batch_size=self.batch_size, time_size=self.time_size, layers=layers)
 
         '''
@@ -192,7 +192,7 @@ class RNNLM(object):
             train_valid_words = 0
             
             for ii in range(0, self.num_train_samples, self.batch_size):
-                print ('%d / %d' % (ii, self.num_train_samples))               
+                # print ('%d / %d' % (ii, self.num_train_samples))               
 
                 _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train], {self.dropout_rate: 0.5})
                 train_loss += np.sum(_loss)
