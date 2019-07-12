@@ -89,8 +89,8 @@ class RNNLM(object):
             
         ######################################
 
-        training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).batch(self.batch_size)
-        validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).batch(self.batch_size)
+        training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).batch(self.batch_size, drop_remainder=True)
+        validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).batch(self.batch_size, drop_remainder=True)
         test_dataset = tf.data.TextLineDataset(self.file_name_test).map(parse).batch(1)
 
         iterator = tf.data.Iterator.from_structure(training_dataset.output_types, training_dataset.output_shapes)
