@@ -197,8 +197,7 @@ class RNNLM(object):
 
                         train_loss /= train_valid_words
                         train_ppl = math.exp(train_loss)
-                        print ("Training Step: {}, LR: {}".format(global_step, current_learning_rate))
-                        print ("    Training PPL: {}".format(train_ppl))
+                        print ("step: %d, lr: %f, ppl: %f" % (global_step, current_learning_rate, train_ppl))
 
                         train_loss = 0.0
                         train_valid_words = 0
