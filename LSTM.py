@@ -26,12 +26,13 @@ def dsigmoid(x):
 
 class LSTM(Layer):
 
-    def __init__(self, input_shape, size, init='glorot_normal', return_sequences=True, name=None):
+    def __init__(self, input_shape, size, init='glorot_normal', return_sequences=True, dropout_rate=None, name=None):
         self.input_shape = input_shape
         self.batch_size, self.time_size, self.input_size = self.input_shape
         self.output_size = size
         self.init = init
         self.return_sequences = return_sequences
+        self.dropout_rate = tf.constant(0.0) if dropout_rate == None else dropout_rate
         self.name = name
         
         # print (self.time_size, self.batch_size, self.input_size, self.output_size)
@@ -138,6 +139,7 @@ class LSTM(Layer):
                 s = a * i + ls[t-1] * f
                 
             h = tanh(s) * o
+            h = h * tf.cast(tf.random_uniform(shape=tf.shape(X)) > self.dropout_rate, tf.float32)
 
             ls[t] = s
             lh[t] = h
@@ -204,6 +206,7 @@ class LSTM(Layer):
         for t in range(self.time_size-1, -1, -1):
             if t == 0:
                 dh = DO_T[t] + dout
+                dh = dh * tf.cast(h[t] > 0., tf.float32)
                 ds = dh * o[t] * dtanh(tanh(s[t])) + lds[t+1] * f[t+1]
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
@@ -218,6 +221,7 @@ class LSTM(Layer):
                 do = dh * tanh(s[t]) * dsigmoid(o[t]) 
             else:
                 dh = DO_T[t] + dout
+                dh = dh * tf.cast(h[t] > 0., tf.float32)
                 ds = dh * o[t] * dtanh(tanh(s[t])) + lds[t+1] * f[t+1]
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 

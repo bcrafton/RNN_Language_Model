@@ -103,7 +103,7 @@ class RNNLM(object):
         self.test_init_op = iterator.make_initializer(test_dataset)
 
         embed = Embedded(input_shape=(self.batch_size, self.time_size, self.vocab_size), output_size=self.num_hidden_units, name='embedded')
-        lstm1 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units, name='lstm1')
+        lstm1 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units, dropout_rate=self.dropout_rate, name='lstm1')
         # dropout1 = Dropout(rate=self.dropout_rate)
         # lstm2 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
         # dropout2 = Dropout(rate=self.dropout_rate)
