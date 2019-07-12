@@ -35,12 +35,15 @@ class Dense(Layer):
     ###################################################################
 
     def forward(self, X):
+        # X = tf.Print(X, [tf.shape(X)], message='Dense in: ', summarize=1000)
         X = tf.reshape(X, [self.batch_size * self.time_size, self.input_size])
         
         Z = tf.matmul(X, self.weights) + self.bias
         A = self.activation.forward(Z)
         
         A = tf.reshape(A, [self.batch_size, self.time_size, self.output_size])
+        # A = tf.Print(A, [tf.shape(A)], message='Dense out: ', summarize=1000)
+
         return A, None
             
     def backward(self, AI, AO, DO, cache):

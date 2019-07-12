@@ -86,7 +86,7 @@ class LSTM(Layer):
         lh = [None] * self.time_size
         
         X_T = tf.transpose(X, [1, 0, 2])
-        
+        # X_T = tf.Print(X_T, [tf.shape(X), tf.shape(X_T)], message='LSTM in: ', summarize=1000)        
         for t in range(self.time_size):
             x = X_T[t]
             
@@ -116,8 +116,8 @@ class LSTM(Layer):
             ls[t] = s
             lh[t] = h
 
-        # [T, B, O]
         outputs = tf.stack(lh, axis=1)
+        # outputs = tf.Print(outputs, [tf.shape(outputs)], message='LSTM out: ', summarize=1000)
 
         cache = {}
         cache['a'] = la
