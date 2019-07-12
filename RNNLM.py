@@ -175,67 +175,50 @@ class RNNLM(object):
         self.train = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
         # self.train = tf.train.AdamOptimizer(learning_rate=0.01, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
 
+    ##############################
+
     def batch_train(self, sess, saver):
 
-        best_score = np.inf
-        patience = 5
-        epoch = 0
+        for epoch in range(self.num_epochs):
 
-        while epoch < self.num_epochs:
+            ##############################
 
             sess.run(self.trining_init_op, {self.file_name_train: "./data/train.ids"})
             train_loss = 0.0
             train_valid_words = 0
             
-            while True:
-                try:
-                    _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train], {self.dropout_rate: 0.5})
-                    train_loss += np.sum(_loss)
-                    train_valid_words += _valid_words
+            for _ in range(0, self.num_train_samples, self.batch_size):
 
-                    if global_step % self.check_point_step == 0:
+                _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train], {self.dropout_rate: 0.5})
+                train_loss += np.sum(_loss)
+                train_valid_words += _valid_words
 
-                        train_loss /= train_valid_words
-                        train_ppl = math.exp(train_loss)
-                        print ("step: %d, lr: %f, ppl: %f" % (global_step, current_learning_rate, train_ppl))
+                if global_step % self.check_point_step == 0:
 
-                        train_loss = 0.0
-                        train_valid_words = 0
+                    train_loss /= train_valid_words
+                    train_ppl = math.exp(train_loss)
+                    print ("step: %d, lr: %f, ppl: %f" % (global_step, current_learning_rate, train_ppl))
 
+                    train_loss = 0.0
+                    train_valid_words = 0
+                    
+            ##############################
 
-                except tf.errors.OutOfRangeError:
-                    # The end of one epoch
-                    break
-
-            '''
             sess.run(self.validation_init_op, {self.file_name_validation: "./data/valid.ids"})
             dev_loss = 0.0
             dev_valid_words = 0
-            while True:
-                try:
-                    _dev_loss, _dev_valid_words = sess.run(
-                        [self.loss, self.valid_words],
-                        {self.dropout_rate: 1.0})
+            
+            for _ in range(0, self.num_valid_samples, self.batch_size):
 
-                    dev_loss += np.sum(_dev_loss)
-                    dev_valid_words += _dev_valid_words
+                _dev_loss, _dev_valid_words = sess.run([self.loss, self.valid_words], {self.dropout_rate: 1.0})
+                dev_loss += np.sum(_dev_loss)
+                dev_valid_words += _dev_valid_words
 
-                except tf.errors.OutOfRangeError:
-                    dev_loss /= dev_valid_words
-                    dev_ppl = math.exp(dev_loss)
-                    print ("Validation PPL: {}".format(dev_ppl))
-                    if dev_ppl < best_score:
-                        patience = 5
-                        saver.save(sess, "model/best_model.ckpt")
-                        best_score = dev_ppl
-                    else:
-                        patience -= 1
-
-                    if patience == 0:
-                        epoch = self.num_epochs
-
-                    break
-            '''
+            dev_loss /= dev_valid_words
+            dev_ppl = math.exp(dev_loss)
+            print ("Validation PPL: {}".format(dev_ppl))
+            
+            ##############################
 
     def predict(self, sess, input_file, raw_file, verbose=False):
         # if verbose is true, then we print the ppl of every sequence
@@ -251,9 +234,7 @@ class RNNLM(object):
 
                 raw_line = raw_line.strip()
 
-                _dev_loss, _dev_valid_words, input_line = sess.run(
-                    [self.loss, self.valid_words, self.input_batch],
-                    {self.dropout_rate: 1.0})
+                _dev_loss, _dev_valid_words, input_line = sess.run([self.loss, self.valid_words, self.input_batch], {self.dropout_rate: 1.0})
 
                 dev_loss = np.sum(_dev_loss)
                 dev_valid_words = _dev_valid_words
