@@ -149,6 +149,7 @@ class LSTM(Layer):
 
         outputs = tf.stack(lh, axis=1)
         dropout = tf.cast(tf.random_uniform(shape=tf.shape(outputs)) > self.dropout_rate, tf.float32)
+        outputs = dropout * outputs
         # outputs = tf.Print(outputs, [tf.shape(outputs)], message='LSTM out: ', summarize=1000)
 
         cache = {}
