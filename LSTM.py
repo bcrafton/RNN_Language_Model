@@ -111,7 +111,7 @@ class LSTM(Layer):
         lo = [None] * self.time_size
         ls = [None] * self.time_size
         lh = [None] * self.time_size
-        ldropout = [None] * self.time_size
+        # ldropout = [None] * self.time_size
         
         X_T = tf.transpose(X, [1, 0, 2])
         # X_T = tf.Print(X_T, [tf.shape(X), tf.shape(X_T)], message='LSTM in: ', summarize=1000)        
@@ -140,14 +140,15 @@ class LSTM(Layer):
                 s = a * i + ls[t-1] * f
                 
             h = tanh(s) * o
-            dropout = tf.cast(tf.random_uniform(shape=tf.shape(h)) > self.dropout_rate, tf.float32)
-            h = h * dropout
+            # dropout = tf.cast(tf.random_uniform(shape=tf.shape(h)) > self.dropout_rate, tf.float32)
+            # h = h * dropout
 
             ls[t] = s
             lh[t] = h
-            ldropout[t] = dropout
+            # ldropout[t] = dropout
 
         outputs = tf.stack(lh, axis=1)
+        dropout = tf.cast(tf.random_uniform(shape=tf.shape(outputs)) > self.dropout_rate, tf.float32)
         # outputs = tf.Print(outputs, [tf.shape(outputs)], message='LSTM out: ', summarize=1000)
 
         cache = {}
@@ -157,7 +158,7 @@ class LSTM(Layer):
         cache['o'] = lo
         cache['s'] = ls
         cache['h'] = lh
-        cache['dropout'] = ldropout
+        cache['dropout'] = dropout
         
         if self.return_sequences:
             return outputs, cache
@@ -207,27 +208,25 @@ class LSTM(Layer):
 
         DO_T = tf.transpose(DO, [1, 0, 2])
         AI_T = tf.transpose(AI, [1, 0, 2])
+        dropout_T = tf.transpose(dropout, [1, 0, 2])
 
         for t in range(self.time_size-1, -1, -1):
             if t == 0:
-                dh = DO_T[t] + dout
-                dh = dh * dropout[t]
+                dh = DO_T[t] * dropout_T[t] + dout
                 ds = dh * o[t] * dtanh(tanh(s[t])) + lds[t+1] * f[t+1]
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
                 df = tf.zeros_like(da)
                 do = dh * tanh(s[t]) * dsigmoid(o[t]) 
             elif t == self.time_size-1:
-                dh = DO_T[t]
-                dh = dh * dropout[t]
+                dh = DO_T[t] * dropout_T[t]
                 ds = dh * o[t] * dtanh(tanh(s[t]))
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
                 df = ds * s[t-1] * dsigmoid(f[t]) 
                 do = dh * tanh(s[t]) * dsigmoid(o[t]) 
             else:
-                dh = DO_T[t] + dout
-                dh = dh * dropout[t]
+                dh = DO_T[t] * dropout_T[t] + dout
                 ds = dh * o[t] * dtanh(tanh(s[t])) + lds[t+1] * f[t+1]
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
