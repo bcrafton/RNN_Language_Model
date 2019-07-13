@@ -111,6 +111,7 @@ class LSTM(Layer):
         lo = [None] * self.time_size
         ls = [None] * self.time_size
         lh = [None] * self.time_size
+        ldropout = [None] * self.time_size
         
         X_T = tf.transpose(X, [1, 0, 2])
         # X_T = tf.Print(X_T, [tf.shape(X), tf.shape(X_T)], message='LSTM in: ', summarize=1000)        
@@ -139,10 +140,12 @@ class LSTM(Layer):
                 s = a * i + ls[t-1] * f
                 
             h = tanh(s) * o
-            h = h * tf.cast(tf.random_uniform(shape=tf.shape(h)) > self.dropout_rate, tf.float32)
+            dropout = tf.cast(tf.random_uniform(shape=tf.shape(h)) > self.dropout_rate, tf.float32)
+            h = h * dropout
 
             ls[t] = s
             lh[t] = h
+            ldropout[t] = dropout
 
         outputs = tf.stack(lh, axis=1)
         # outputs = tf.Print(outputs, [tf.shape(outputs)], message='LSTM out: ', summarize=1000)
@@ -154,6 +157,7 @@ class LSTM(Layer):
         cache['o'] = lo
         cache['s'] = ls
         cache['h'] = lh
+        cache['dropout'] = ldropout
         
         if self.return_sequences:
             return outputs, cache
@@ -181,6 +185,7 @@ class LSTM(Layer):
         o = cache['o'] 
         s = cache['s'] 
         h = cache['h'] 
+        dropout = cache['dropout']
         
         lds = [None] * self.time_size
         ldx = [None] * self.time_size
@@ -206,7 +211,7 @@ class LSTM(Layer):
         for t in range(self.time_size-1, -1, -1):
             if t == 0:
                 dh = DO_T[t] + dout
-                dh = dh * tf.cast(h[t] > 0., tf.float32)
+                dh = dh * dropout[t]
                 ds = dh * o[t] * dtanh(tanh(s[t])) + lds[t+1] * f[t+1]
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
@@ -214,6 +219,7 @@ class LSTM(Layer):
                 do = dh * tanh(s[t]) * dsigmoid(o[t]) 
             elif t == self.time_size-1:
                 dh = DO_T[t]
+                dh = dh * dropout[t]
                 ds = dh * o[t] * dtanh(tanh(s[t]))
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
@@ -221,7 +227,7 @@ class LSTM(Layer):
                 do = dh * tanh(s[t]) * dsigmoid(o[t]) 
             else:
                 dh = DO_T[t] + dout
-                dh = dh * tf.cast(h[t] > 0., tf.float32)
+                dh = dh * dropout[t]
                 ds = dh * o[t] * dtanh(tanh(s[t])) + lds[t+1] * f[t+1]
                 da = ds * i[t] * dtanh(a[t])
                 di = ds * a[t] * dsigmoid(i[t]) 
