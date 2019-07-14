@@ -100,7 +100,7 @@ class RNNLM(object):
         non_zero_weights = tf.sign(self.input_batch)
         self.valid_words = tf.reduce_sum(non_zero_weights)
 
-        self.valid_words = tf.Print(self.valid_words, [self.valid_words], message='', summarize=1000)
+        # self.valid_words = tf.Print(self.valid_words, [self.valid_words], message='', summarize=1000)
 
         # Compute sequence length
         def get_length(non_zero_place):

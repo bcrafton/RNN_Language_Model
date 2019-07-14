@@ -1,7 +1,19 @@
+
+import argparse
+import os
+import sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--gpu', type=int, default=0)
+args = parser.parse_args()
+
+if args.gpu >= 0:
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"]=str(args.gpu)
+
 from data_prepare import gen_vocab
 from data_prepare import gen_id_seqs
 from RNNLM import RNNLM
-import os
 # It seems that there are some little bugs in tensorflow 1.4.1.
 # You can find more details in
 # https://github.com/tensorflow/tensorflow/issues/12414
