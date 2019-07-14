@@ -193,10 +193,10 @@ class RNNLM(object):
         labels = tf.reshape(self.output_batch, [-1])
         self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
         
-        params = self.model.params()
+        self.params = self.model.params()
         opt = tf.train.AdagradOptimizer(self.learning_rate)
-        gradients = tf.gradients(self.loss, params, colocate_gradients_with_ops=True)
-        clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
+        gradients = tf.gradients(self.loss, self.params, colocate_gradients_with_ops=True)
+        self.clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
         self.updates = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
 
     ##############################
@@ -214,7 +214,7 @@ class RNNLM(object):
             for ii in range(0, self.num_train_samples, self.batch_size):
                 # print ('%d / %d' % (ii, self.num_train_samples))               
 
-                _loss, _valid_words, global_step, current_learning_rate, _, weights, gvs = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train, self.get_weights, self.grads_and_vars], {self.dropout_rate: 0.0})
+                _loss, _valid_words, global_step, current_learning_rate, _, _params, grad = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates, self.params, self.clipped_gradients], {self.dropout_rate: 0.0})
 
                 '''
                 for key in weights.keys():
