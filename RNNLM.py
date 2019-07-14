@@ -127,6 +127,7 @@ class RNNLM(object):
 
         # Train
         params = tf.trainable_variables()
+        self.params = params
 
         opt = tf.train.AdagradOptimizer(self.learning_rate)
         gradients = tf.gradients(self.loss, params, colocate_gradients_with_ops=True)
@@ -146,7 +147,14 @@ class RNNLM(object):
             for ii in range(0, self.num_train_samples, self.batch_size):
                 # print ('%d / %d' % (ii, self.num_train_samples))               
 
-                _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates], {self.dropout_rate: 1.0})
+                _loss, _valid_words, global_step, current_learning_rate, _, _params = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates, self.params], {self.dropout_rate: 1.0})
+
+                '''
+                for p in _params:
+                    print (np.shape(p), np.std(p))
+                assert(False)
+                '''
+
                 train_loss += np.sum(_loss)
                 train_valid_words += _valid_words
 
