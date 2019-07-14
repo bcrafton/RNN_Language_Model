@@ -186,7 +186,7 @@ class RNNLM(object):
         self.loss2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
         
         self.params = self.model.params()
-        self.gradients = tf.gradients(self.loss2, self.params, colocate_gradients_with_ops=True)
+        self.gradients = tf.gradients(self.loss1, self.params, colocate_gradients_with_ops=True)
         self.clipped_gradients, _ = tf.clip_by_global_norm(self.gradients, self.max_gradient_norm)
         self.gvs2 = zip(self.clipped_gradients, self.params)
         
@@ -258,18 +258,22 @@ class RNNLM(object):
             ##############################
 
             sess.run(self.validation_init_op, {self.file_name_validation: "./data/valid.ids"})
-            dev_loss = 0.0
+            dev_loss1 = 0.0
+            dev_loss2 = 0.0
             dev_valid_words = 0
             
             for _ in range(0, self.num_valid_samples, self.batch_size):
 
-                _dev_loss, _dev_valid_words = sess.run([self.loss, self.valid_words], {self.dropout_rate: 0.0})
-                dev_loss += np.sum(_dev_loss)
+                _dev_loss1, _dev_loss2, _dev_valid_words = sess.run([self.loss1, self.loss2, self.valid_words], {self.dropout_rate: 0.0})
+                dev_loss1 += np.sum(_dev_loss1)
+                dev_loss2 += np.sum(_dev_loss2)
                 dev_valid_words += _dev_valid_words
 
-            dev_loss /= dev_valid_words
-            dev_ppl = math.exp(dev_loss)
-            print ("Validation PPL: {}".format(dev_ppl))
+            dev_loss1 /= dev_valid_words
+            dev_loss2 /= dev_valid_words
+            dev_ppl1 = math.exp(dev_loss1)
+            dev_ppl2 = math.exp(dev_loss2)
+            print ("val ppl1: %f, val ppl2: %f" % (dev_ppl1, dev_ppl2))
             
             ##############################
 
