@@ -82,7 +82,6 @@ class RNNLM(object):
         self.validation_init_op = iterator.make_initializer(validation_dataset)
         self.test_init_op = iterator.make_initializer(test_dataset)
 
-
         # Input embedding mat
         self.input_embedding_mat = tf.get_variable("input_embedding_mat", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
         self.input_embedded = tf.nn.embedding_lookup(self.input_embedding_mat, self.input_batch)
@@ -101,6 +100,8 @@ class RNNLM(object):
         non_zero_weights = tf.sign(self.input_batch)
         self.valid_words = tf.reduce_sum(non_zero_weights)
 
+        self.valid_words = tf.Print(self.valid_words, [self.valid_words], message='', summarize=1000)
+
         # Compute sequence length
         def get_length(non_zero_place):
             real_length = tf.reduce_sum(non_zero_place, 1)
@@ -108,7 +109,6 @@ class RNNLM(object):
             return real_length
 
         batch_length = get_length(non_zero_weights)
-
 
         # The shape of outputs is [batch_size, max_length, num_hidden_units]
         outputs, _ = tf.nn.dynamic_rnn(cell=self.cell, inputs=self.input_embedded, sequence_length=batch_length, dtype=tf.float32)
@@ -126,7 +126,6 @@ class RNNLM(object):
         self.loss = loss
 
         # Train
-
         params = tf.trainable_variables()
 
         opt = tf.train.AdagradOptimizer(self.learning_rate)
@@ -134,66 +133,49 @@ class RNNLM(object):
         clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
         self.updates = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
 
-
     def batch_train(self, sess, saver):
 
-        best_score = np.inf
-        patience = 5
-        epoch = 0
+        for epoch in range(self.num_epochs):
 
-        while epoch < self.num_epochs:
+            ##############################
 
             sess.run(self.trining_init_op, {self.file_name_train: "./data/train.ids"})
             train_loss = 0.0
             train_valid_words = 0
-            while True:
+            
+            for ii in range(0, self.num_train_samples, self.batch_size):
+                # print ('%d / %d' % (ii, self.num_train_samples))               
 
-                try:
-                    _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates], {self.dropout_rate: 1.0})
-                    train_loss += np.sum(_loss)
-                    train_valid_words += _valid_words
+                _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates], {self.dropout_rate: 1.0})
+                train_loss += np.sum(_loss)
+                train_valid_words += _valid_words
 
-                    if global_step % self.check_point_step == 0:
+                if global_step % self.check_point_step == 0:
 
-                        train_loss /= train_valid_words
-                        train_ppl = math.exp(train_loss)
-                        print ("Training Step: {}, LR: {}".format(global_step, current_learning_rate))
-                        print ("    Training PPL: {}".format(train_ppl))
+                    train_loss /= train_valid_words
+                    train_ppl = math.exp(train_loss)
+                    print ("step: %d, lr: %f, ppl: %f" % (global_step, current_learning_rate, train_ppl))
 
-                        train_loss = 0.0
-                        train_valid_words = 0
-
-
-                except tf.errors.OutOfRangeError:
-                    # The end of one epoch
-                    break
-
+                    train_loss = 0.0
+                    train_valid_words = 0
+                    
+            ##############################
 
             sess.run(self.validation_init_op, {self.file_name_validation: "./data/valid.ids"})
             dev_loss = 0.0
             dev_valid_words = 0
-            while True:
-                try:
-                    _dev_loss, _dev_valid_words = sess.run([self.loss, self.valid_words], {self.dropout_rate: 1.0})
+            
+            for _ in range(0, self.num_valid_samples, self.batch_size):
 
-                    dev_loss += np.sum(_dev_loss)
-                    dev_valid_words += _dev_valid_words
+                _dev_loss, _dev_valid_words = sess.run([self.loss, self.valid_words], {self.dropout_rate: 1.0})
+                dev_loss += np.sum(_dev_loss)
+                dev_valid_words += _dev_valid_words
 
-                except tf.errors.OutOfRangeError:
-                    dev_loss /= dev_valid_words
-                    dev_ppl = math.exp(dev_loss)
-                    print ("Validation PPL: {}".format(dev_ppl))
-                    if dev_ppl < best_score:
-                        patience = 5
-                        saver.save(sess, "model/best_model.ckpt")
-                        best_score = dev_ppl
-                    else:
-                        patience -= 1
-
-                    if patience == 0:
-                        epoch = self.num_epochs
-
-                    break
+            dev_loss /= dev_valid_words
+            dev_ppl = math.exp(dev_loss)
+            print ("val ppl: %f" % (dev_ppl))
+            
+            ##############################
 
     def predict(self, sess, input_file, raw_file, verbose=False):
         # if verbose is true, then we print the ppl of every sequence
@@ -225,4 +207,5 @@ class RNNLM(object):
             global_dev_loss /= global_dev_valid_words
             global_dev_ppl = math.exp(global_dev_loss)
             print ("Global Test PPL: {}".format(global_dev_ppl))
-
+            
+            
