@@ -176,14 +176,14 @@ class RNNLM(object):
         X = self.input_batch
         Y = tf.one_hot(self.output_batch, depth=self.vocab_size, axis=-1)
         
-        self.gvs1, self.loss = self.model.train(X=X, Y=Y)
+        self.gvs1, self.loss1 = self.model.train(X=X, Y=Y)
 
         #############################3
         
         logits = self.model.predict(X=self.input_batch)
         logits = tf.reshape(logits, [-1, vocab_size])
         labels = tf.reshape(self.output_batch, [-1])
-        self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
+        self.loss2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
         
         self.params = self.model.params()
         self.gradients = tf.gradients(self.loss, self.params, colocate_gradients_with_ops=True)
@@ -204,13 +204,14 @@ class RNNLM(object):
             ##############################
 
             sess.run(self.trining_init_op, {self.file_name_train: "./data/train.ids"})
-            train_loss = 0.0
+            train_loss1 = 0.0
+            train_loss2 = 0.0
             train_valid_words = 0
             
             for ii in range(0, self.num_train_samples, self.batch_size):
                 # print ('%d / %d' % (ii, self.num_train_samples))               
 
-                _loss, _valid_words, global_step, current_learning_rate, _, _params, gvs = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train, self.params, self.grads_and_vars], {self.dropout_rate: 0.0})
+                _loss1, _loss2, _valid_words, global_step, current_learning_rate, _, _params, gvs = sess.run([self.loss1, self.loss2, self.valid_words, self.global_step, self.learning_rate, self.train, self.params, self.grads_and_vars], {self.dropout_rate: 0.0})
 
                 '''
                 for key in weights.keys():
@@ -239,14 +240,17 @@ class RNNLM(object):
                 assert(False)
                 '''
 
-                train_loss += np.sum(_loss)
+                train_loss1 += np.sum(_loss1)
+                train_loss2 += np.sum(_loss2)
                 train_valid_words += _valid_words
 
                 if global_step % self.check_point_step == 0:
 
-                    train_loss /= train_valid_words
-                    train_ppl = math.exp(train_loss)
-                    print ("step: %d, lr: %f, ppl: %f" % (global_step, current_learning_rate, train_ppl))
+                    train_loss1 /= train_valid_words
+                    train_loss2 /= train_valid_words
+                    train_ppl1 = math.exp(train_loss1)
+                    train_ppl2 = math.exp(train_loss2)
+                    print ("step: %d, lr: %f, ppl1: %f, ppl2: %f" % (global_step, current_learning_rate, train_ppl1, train_ppl2))
 
                     train_loss = 0.0
                     train_valid_words = 0
