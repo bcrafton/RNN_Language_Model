@@ -200,18 +200,18 @@ class RNNLM(object):
             for ii in range(0, self.num_train_samples, self.batch_size):
                 # print ('%d / %d' % (ii, self.num_train_samples))               
 
-                _loss, _valid_words, global_step, current_learning_rate, _, weights, gvs = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train, self.get_weights, self.grads_and_vars], {self.dropout_rate: 0.5})
+                _loss, _valid_words, global_step, current_learning_rate, _, weights, gvs = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train, self.get_weights, self.grads_and_vars], {self.dropout_rate: 0.0})
 
                 '''
                 for key in weights.keys():
-                    print (np.shape(weights[key]), np.std(weights[key]))
+                    print (np.shape(weights[key]), np.std(weights[key]), np.average(gv[0]))
                 assert(False)
                 '''
                 '''
                 for gv in gvs:
-                    print (np.shape(gv[0]), np.std(gv[0]))
+                    print (np.shape(gv[0]), np.std(gv[0]), np.average(gv[0]))
                 assert(False)
-                '''
+                 '''
 
                 train_loss += np.sum(_loss)
                 train_valid_words += _valid_words
