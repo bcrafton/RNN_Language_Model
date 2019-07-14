@@ -179,11 +179,11 @@ class RNNLM(object):
         # batch x features x depth if axis == -1
         Y = tf.one_hot(self.output_batch, depth=self.vocab_size, axis=-1)
         
-        gvs, self.loss = self.model.train(X=X, Y=Y)
+        self.grads_and_vars, self.loss = self.model.train(X=X, Y=Y)
         # self.train = tf.train.AdagradOptimizer(learning_rate=0.1).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
-        # self.train = tf.train.AdagradOptimizer(learning_rate=self.learning_rate).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
+        self.train = tf.train.AdagradOptimizer(learning_rate=self.learning_rate).apply_gradients(grads_and_vars=self.grads_and_vars, global_step=self.global_step)
         # self.train = tf.train.AdamOptimizer(learning_rate=0.001).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
-        self.train = tf.train.AdamOptimizer(learning_rate=self.learning_rate, epsilon=1.).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
+        # self.train = tf.train.AdamOptimizer(learning_rate=self.learning_rate, epsilon=1.).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
 
     ##############################
 
@@ -200,11 +200,16 @@ class RNNLM(object):
             for ii in range(0, self.num_train_samples, self.batch_size):
                 # print ('%d / %d' % (ii, self.num_train_samples))               
 
-                _loss, _valid_words, global_step, current_learning_rate, _, weights = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train, self.get_weights], {self.dropout_rate: 0.5})
+                _loss, _valid_words, global_step, current_learning_rate, _, weights, gvs = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train, self.get_weights, self.grads_and_vars], {self.dropout_rate: 0.5})
 
                 '''
                 for key in weights.keys():
                     print (np.shape(weights[key]), np.std(weights[key]))
+                assert(False)
+                '''
+                '''
+                for gv in gvs:
+                    print (np.shape(gv[0]), np.std(gv[0]))
                 assert(False)
                 '''
 

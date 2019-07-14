@@ -40,8 +40,6 @@ class Model:
             else:
                 A[ii], C[ii] = l.forward(A[ii-1])
 
-        N = tf.shape(A[self.num_layers-1])[0]
-        N = tf.cast(N, dtype=tf.float32)
 
         pred = A[self.num_layers-1]
 
@@ -51,7 +49,7 @@ class Model:
         '''
         zeros = tf.cast(tf.sign(X), dtype=tf.float32)
         zeros = tf.reshape(zeros, [self.batch_size, self.time_size, 1])
-        E = ((tf.nn.softmax(pred) - Y) / N) * zeros
+        E = ((tf.nn.softmax(pred) - Y) / self.batch_size) * zeros
         loss = tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.argmax(Y, axis=2), logits=pred) * tf.reshape(zeros, [self.batch_size, self.time_size]))
 
         for ii in range(self.num_layers-1, -1, -1):
