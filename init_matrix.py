@@ -1,7 +1,7 @@
 
 import numpy as np
 
-def init_matrix(size, init):
+def init_matrix(size, init, std=None):
 
     input_size, output_size = size
 
@@ -23,6 +23,10 @@ def init_matrix(size, init):
 
     elif init == 'alexnet':
         weights = np.random.normal(loc=0.0, scale=0.01, size=(input_size, output_size))
+
+    elif init == 'normal':
+        scale = std
+        weights = np.random.normal(loc=0.0, scale=scale, size=(input_size, output_size))
 
     else:
         weights = np.random.normal(loc=0.0, scale=1.0, size=(input_size, output_size))
