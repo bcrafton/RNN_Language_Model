@@ -113,7 +113,7 @@ class RNNLM(object):
         layers = [embed, lstm1, dense]
         self.model = Model(batch_size=self.batch_size, time_size=self.time_size, layers=layers)
 
-        self.get_weights = self.model.get_weights()
+        # self.get_weights = self.model.get_weights()
 
         '''
         # Input embedding mat
@@ -197,7 +197,7 @@ class RNNLM(object):
         opt = tf.train.AdagradOptimizer(self.learning_rate)
         gradients = tf.gradients(self.loss, self.params, colocate_gradients_with_ops=True)
         self.clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
-        self.updates = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
+        self.updates = opt.apply_gradients(zip(self.clipped_gradients, self.params), global_step=self.global_step)
 
     ##############################
 

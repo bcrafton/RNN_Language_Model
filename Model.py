@@ -24,7 +24,7 @@ class Model:
         weights = []
         for ii in range(self.num_layers):
             l = self.layers[ii]
-            w = l.get_weights()
+            w = l.params()
             weights.extend(w)
             
         return weights
