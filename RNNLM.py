@@ -105,7 +105,7 @@ class RNNLM(object):
         embed = Embedded(input_shape=(self.batch_size, self.time_size, self.vocab_size), output_size=self.num_hidden_units, name='embedded')
         lstm1 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units, dropout_rate=self.dropout_rate, name='lstm1')
         # dropout1 = Dropout(rate=self.dropout_rate)
-        # lstm2 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units)
+        lstm2 = LSTM(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.num_hidden_units, dropout_rate=self.dropout_rate, name='lstm2')
         # dropout2 = Dropout(rate=self.dropout_rate)
         dense = Dense(input_shape=(self.batch_size, self.time_size, self.num_hidden_units), size=self.vocab_size, name='dense1')
         
@@ -134,6 +134,8 @@ class RNNLM(object):
         
         non_zero_weights = tf.sign(self.input_batch)
         self.valid_words = tf.reduce_sum(non_zero_weights)
+
+        # self.valid_words = tf.Print(self.valid_words, [self.valid_words], message='', summarize=1000)
 
         # Compute sequence length
         def get_length(non_zero_place):
@@ -178,8 +180,10 @@ class RNNLM(object):
         Y = tf.one_hot(self.output_batch, depth=self.vocab_size, axis=-1)
         
         gvs, self.loss = self.model.train(X=X, Y=Y)
-        self.train = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
-        # self.train = tf.train.AdamOptimizer(learning_rate=0.01, beta1=0.9, beta2=0.999, epsilon=1.0).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
+        # self.train = tf.train.AdagradOptimizer(learning_rate=0.1).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
+        # self.train = tf.train.AdagradOptimizer(learning_rate=self.learning_rate).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
+        # self.train = tf.train.AdamOptimizer(learning_rate=0.001).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
+        self.train = tf.train.AdamOptimizer(learning_rate=self.learning_rate, epsilon=1.).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
 
     ##############################
 

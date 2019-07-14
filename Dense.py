@@ -18,7 +18,8 @@ class Dense(Layer):
         self.activation = Linear() if activation == None else activation
         self.name = name
 
-        bias = np.zeros(shape=self.output_size)
+        bias = init_matrix(size=(self.output_size, 1), init=self.init)
+        bias = np.reshape(bias, [self.output_size])
         weights = init_matrix(size=(self.input_size, self.output_size), init=self.init)
         
         self.bias = tf.Variable(bias, dtype=tf.float32)
