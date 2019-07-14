@@ -131,8 +131,9 @@ class RNNLM(object):
 
         opt = tf.train.AdagradOptimizer(self.learning_rate)
         gradients = tf.gradients(self.loss, params, colocate_gradients_with_ops=True)
-        clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
-        self.updates = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
+        self.clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
+        # self.clipped_gradients = gradients
+        self.updates = opt.apply_gradients(zip(self.clipped_gradients, params), global_step=self.global_step)
 
     def batch_train(self, sess, saver):
 
@@ -147,11 +148,19 @@ class RNNLM(object):
             for ii in range(0, self.num_train_samples, self.batch_size):
                 # print ('%d / %d' % (ii, self.num_train_samples))               
 
-                _loss, _valid_words, global_step, current_learning_rate, _, _params = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates, self.params], {self.dropout_rate: 1.0})
+                _loss, _valid_words, global_step, current_learning_rate, _, _params, grads = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates, self.params, self.clipped_gradients], {self.dropout_rate: 1.0})
 
                 '''
                 for p in _params:
-                    print (np.shape(p), np.std(p))
+                    print (np.shape(p), np.std(p), np.average(p))
+                assert(False)
+                '''
+                '''
+                for g in grads:
+                    if np.shape(g) == (3,):
+                        print (np.shape(g[0]), np.std(g[0]), np.average(g[0]))
+                    else:
+                        print (np.shape(g), np.std(g), np.average(g))
                 assert(False)
                 '''
 
