@@ -188,7 +188,7 @@ class RNNLM(object):
         self.params = self.model.params()
         self.gradients = tf.gradients(self.loss, self.params, colocate_gradients_with_ops=True)
         self.clipped_gradients, _ = tf.clip_by_global_norm(self.gradients, self.max_gradient_norm)
-        self.gvs2 = zip(clipped_gradients, params)
+        self.gvs2 = zip(self.clipped_gradients, self.params)
         
         ##############################
         
@@ -210,18 +210,34 @@ class RNNLM(object):
             for ii in range(0, self.num_train_samples, self.batch_size):
                 # print ('%d / %d' % (ii, self.num_train_samples))               
 
-                _loss, _valid_words, global_step, current_learning_rate, _, _params, grad = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train, self.params, self.clipped_gradients], {self.dropout_rate: 0.0})
+                _loss, _valid_words, global_step, current_learning_rate, _, _params, gvs = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train, self.params, self.grads_and_vars], {self.dropout_rate: 0.0})
 
                 '''
                 for key in weights.keys():
                     print (np.shape(weights[key]), np.std(weights[key]), np.average(gv[0]))
                 assert(False)
                 '''
+
                 '''
                 for gv in gvs:
                     print (np.shape(gv[0]), np.std(gv[0]), np.average(gv[0]))
                 assert(False)
-                 '''
+                '''
+
+                '''
+                for p in _params:
+                    print (np.shape(p), np.std(p), np.average(p))
+                assert(False)
+                '''
+
+                '''
+                for g in gvs:
+                    if np.shape(g[0]) == (3,):
+                        print (np.shape(g[0][0]), np.std(g[0][0]), np.average(g[0][0]))
+                    else:
+                        print (np.shape(g[0]), np.std(g[0]), np.average(g[0]))
+                assert(False)
+                '''
 
                 train_loss += np.sum(_loss)
                 train_valid_words += _valid_words
