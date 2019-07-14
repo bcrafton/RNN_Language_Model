@@ -273,7 +273,7 @@ class LSTM(Layer):
         (dba, self.ba), (dbi, self.bi), (dbf, self.bf), (dbo, self.bo)
         ]
 
-        return ldx, dw
+        return ldx, []
 
     ###################################################################
 

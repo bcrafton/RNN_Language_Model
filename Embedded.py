@@ -62,7 +62,7 @@ class Embedded(Layer):
         # DW = tf.zeros_like(self.weights)
         # DW = tf.Print(DW, [tf.shape(AI), tf.shape(DO)], message='', summarize=1000)
 
-        return None, [(DW, self.weights)]
+        return None, []
 
     ###################################################################
         

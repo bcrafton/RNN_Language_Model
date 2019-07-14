@@ -32,7 +32,8 @@ class Dense(Layer):
         return [(self.name, self.weights), (self.name + "_bias", self.bias)]
 
     def params(self):
-        return [self.weights, self.bias]
+        return []
+        # return [self.weights, self.bias]
 
     def num_params(self):
         weights_size = self.input_size * self.output_size
