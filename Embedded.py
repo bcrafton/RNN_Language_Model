@@ -27,6 +27,9 @@ class Embedded(Layer):
         assert(self.name is not None)
         return [(self.name, self.weights)]
 
+    def get_weights(self):
+        return [self.weights]
+
     def num_params(self):
         weights_size = self.input_size * self.output_size
         return weights_size

@@ -19,7 +19,16 @@ class Model:
                 weights[key] = value
             
         return weights
-        
+
+    def params(self):
+        weights = []
+        for ii in range(self.num_layers):
+            l = self.layers[ii]
+            w = l.get_weights()
+            weights.extend(w)
+            
+        return weights
+
     def num_params(self):
         param_sum = 0
         for ii in range(self.num_layers):
