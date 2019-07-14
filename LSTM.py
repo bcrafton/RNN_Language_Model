@@ -95,6 +95,8 @@ class LSTM(Layer):
         return weights
 
     def params(self):
+        # return []
+
         wx = [self.Wa_x, self.Wi_x, self.Wf_x, self.Wo_x]
         wh = [self.Wa_h, self.Wi_h, self.Wf_h, self.Wo_h]
         b  = [self.ba, self.bi, self.bf, self.bo]
@@ -274,6 +276,7 @@ class LSTM(Layer):
         ]
 
         return ldx, []
+        # return ldx, dw
 
     ###################################################################
 

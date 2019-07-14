@@ -28,6 +28,7 @@ class Embedded(Layer):
         return [(self.name, self.weights)]
 
     def params(self):
+        # return []
         return [self.weights]
 
     def num_params(self):
@@ -63,6 +64,7 @@ class Embedded(Layer):
         # DW = tf.Print(DW, [tf.shape(AI), tf.shape(DO)], message='', summarize=1000)
 
         return None, []
+        # return None, [(DW, self.weights)]
 
     ###################################################################
         
