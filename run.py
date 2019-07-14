@@ -40,7 +40,7 @@ def create_model(sess):
                   check_point_step=100,
                   num_train_samples=num_train_samples,
                   num_valid_samples=num_valid_samples,
-                  num_layers=2,
+                  num_layers=1,
                   num_hidden_units=600,
                   initial_learning_rate=1.0,
                   final_learning_rate=0.0005,

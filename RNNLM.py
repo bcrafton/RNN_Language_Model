@@ -42,13 +42,36 @@ class RNNLM(object):
         self.file_name_test = tf.placeholder(tf.string)
 
         def parse(line):
+            '''
+            padded_batch(
+                batch_size,
+                padded_shapes,        # looks like we can do something with this actually. force a certain size ?
+                padding_values=None,
+                drop_remainder=False)
+            '''
+
             line_split = tf.string_split([line])
+
             input_seq = tf.string_to_number(line_split.values[:-1], out_type=tf.int32)
             output_seq = tf.string_to_number(line_split.values[1:], out_type=tf.int32)
-            return input_seq, output_seq
 
-        training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).shuffle(256).padded_batch(self.batch_size, padded_shapes=([None], [None]))
-        validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).padded_batch(self.batch_size, padded_shapes=([None], [None]))
+            input_seq = input_seq[0:64]
+            output_seq = output_seq[0:64]
+
+            shape = tf.shape(input_seq)
+
+            input_seq = tf.pad(input_seq,   [[0, 64 - shape[0]]])
+            output_seq = tf.pad(output_seq, [[0, 64 - shape[0]]])
+
+            # input_seq = tf.Print(input_seq, [tf.shape(input_seq), tf.shape(output_seq)], message='', summarize=1000)
+            # input_seq = tf.Print(input_seq, [tf.reduce_max(input_seq), tf.reduce_max(output_seq)], message='', summarize=1000)
+
+            return input_seq, output_seq
+            
+        ######################################
+
+        training_dataset = tf.data.TextLineDataset(self.file_name_train).map(parse).batch(self.batch_size, drop_remainder=True).repeat()
+        validation_dataset = tf.data.TextLineDataset(self.file_name_validation).map(parse).batch(self.batch_size, drop_remainder=True).repeat()
         test_dataset = tf.data.TextLineDataset(self.file_name_test).map(parse).batch(1)
 
         iterator = tf.data.Iterator.from_structure(training_dataset.output_types, training_dataset.output_shapes)
@@ -126,9 +149,7 @@ class RNNLM(object):
             while True:
 
                 try:
-                    _loss, _valid_words, global_step, current_learning_rate, _ = sess.run(
-                        [self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates],
-                        {self.dropout_rate: 0.5})
+                    _loss, _valid_words, global_step, current_learning_rate, _ = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates], {self.dropout_rate: 1.0})
                     train_loss += np.sum(_loss)
                     train_valid_words += _valid_words
 
@@ -153,9 +174,7 @@ class RNNLM(object):
             dev_valid_words = 0
             while True:
                 try:
-                    _dev_loss, _dev_valid_words = sess.run(
-                        [self.loss, self.valid_words],
-                        {self.dropout_rate: 1.0})
+                    _dev_loss, _dev_valid_words = sess.run([self.loss, self.valid_words], {self.dropout_rate: 1.0})
 
                     dev_loss += np.sum(_dev_loss)
                     dev_valid_words += _dev_valid_words
@@ -190,9 +209,7 @@ class RNNLM(object):
 
                 raw_line = raw_line.strip()
 
-                _dev_loss, _dev_valid_words, input_line = sess.run(
-                    [self.loss, self.valid_words, self.input_batch],
-                    {self.dropout_rate: 1.0})
+                _dev_loss, _dev_valid_words, input_line = sess.run([self.loss, self.valid_words, self.input_batch], {self.dropout_rate: 1.0})
 
                 dev_loss = np.sum(_dev_loss)
                 dev_valid_words = _dev_valid_words
