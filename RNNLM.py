@@ -173,6 +173,7 @@ class RNNLM(object):
         self.updates = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
         '''
         
+        '''
         X = self.input_batch
         # https://www.tensorflow.org/api_docs/python/tf/one_hot
         # If indices is a matrix (batch) with shape [batch, features], the output shape will be:
@@ -184,6 +185,19 @@ class RNNLM(object):
         self.train = tf.train.AdagradOptimizer(learning_rate=self.learning_rate).apply_gradients(grads_and_vars=self.grads_and_vars, global_step=self.global_step)
         # self.train = tf.train.AdamOptimizer(learning_rate=0.001).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
         # self.train = tf.train.AdamOptimizer(learning_rate=self.learning_rate, epsilon=1.).apply_gradients(grads_and_vars=gvs, global_step=self.global_step)
+        '''
+        
+        X = self.input_batch
+        logits = self.model.predict(X=X)
+        logits = tf.reshape(logits, [-1, vocab_size])
+        labels = tf.reshape(self.output_batch, [-1])
+        self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
+        
+        params = self.model.params()
+        opt = tf.train.AdagradOptimizer(self.learning_rate)
+        gradients = tf.gradients(self.loss, params, colocate_gradients_with_ops=True)
+        clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
+        self.updates = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
 
     ##############################
 
