@@ -176,23 +176,25 @@ class RNNLM(object):
         X = self.input_batch
         Y = tf.one_hot(self.output_batch, depth=self.vocab_size, axis=-1)
         
-        self.gvs1, self.loss1 = self.model.train(X=X, Y=Y)
+        self.grads1, self.params1, self.loss1 = self.model.train(X=X, Y=Y)
 
         #############################3
         
         logits = self.model.predict(X=self.input_batch)
         logits = tf.reshape(logits, [-1, vocab_size])
         labels = tf.reshape(self.output_batch, [-1])
-        self.loss2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
-        
-        self.params = self.model.params()
-        self.gradients = tf.gradients(self.loss1, self.params, colocate_gradients_with_ops=True)
-        self.clipped_gradients, _ = tf.clip_by_global_norm(self.gradients, self.max_gradient_norm)
-        self.gvs2 = zip(self.clipped_gradients, self.params)
-        
-        ##############################
-        
-        self.grads_and_vars = self.gvs1 + self.gvs2
+        # self.loss2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
+        self.loss2 = tf.constant(0.0)        
+
+        self.params2 = self.model.params()
+        self.grads2 = tf.gradients(self.loss1, self.params2, colocate_gradients_with_ops=True)
+
+        #############################3
+
+        self.params = self.params1 + self.params2
+        self.grads = self.grads1 + self.grads2
+        self.clipped_gradients, _ = tf.clip_by_global_norm(self.grads, self.max_gradient_norm)
+        self.grads_and_vars = zip(self.clipped_gradients, self.params)
         self.train = tf.train.AdagradOptimizer(learning_rate=self.learning_rate).apply_gradients(grads_and_vars=self.grads_and_vars, global_step=self.global_step)
 
     ##############################

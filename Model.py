@@ -119,10 +119,10 @@ class Model:
                 grad.append(g)
                 var.append(v)
                 
-        clipped_gradients, _ = tf.clip_by_global_norm(grad, 5.0)
-        grads_and_vars = zip(clipped_gradients, var)
+        # clipped_gradients, _ = tf.clip_by_global_norm(grad, 5.0)
+        # grads_and_vars = zip(clipped_gradients, var)
                 
-        return grads_and_vars, loss
+        return grad, var, loss
               
     def predict(self, X):
         A = [None] * self.num_layers
