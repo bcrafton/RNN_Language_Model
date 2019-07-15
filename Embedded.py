@@ -28,8 +28,8 @@ class Embedded(Layer):
         return [(self.name, self.weights)]
 
     def params(self):
-        # return []
-        return [self.weights]
+        return []
+        # return [self.weights]
 
     def num_params(self):
         weights_size = self.input_size * self.output_size
@@ -59,12 +59,12 @@ class Embedded(Layer):
         AI = tf.reshape(AI, [self.batch_size * self.time_size])
         DO = tf.reshape(DO, [self.batch_size * self.time_size, self.output_size])
 
-        DW = tf.scatter_update(self.zeros, AI, DO)
-        # DW = tf.zeros_like(self.weights)
-        # DW = tf.Print(DW, [tf.shape(AI), tf.shape(DO)], message='', summarize=1000)
+        # DW = tf.scatter_update(self.zeros, AI, DO)
+        # DW = (DO, AI, (self.input_size, self.output_size))
+        DW = tf.IndexedSlices(values=DO, indices=AI, dense_shape=tf.shape(self.weights))
 
-        return None, []
-        # return None, [(DW, self.weights)]
+        # return None, []
+        return None, [(DW, self.weights)]
 
     ###################################################################
         

@@ -236,9 +236,24 @@ class RNNLM(object):
                 '''
                 for g in gvs:
                     if np.shape(g[0]) == (3,):
-                        print (np.shape(g[0][0]), np.std(g[0][0]), np.average(g[0][0]))
+                        print (type(g))
+                        print (type(g[0]))
+                        print (type(g[1]))
+                        print (type(g[0][0]))
+                        print (type(g[0][1]))
+                        print (type(g[0][2]))
+
+                        print (np.shape(g[0][0]))
+                        print (np.shape(g[0][1]))
+                        print (np.shape(g[0][2]))
+
+                        print (np.shape(g))
+                        print (np.shape(g[0]))
+                        print (np.shape(g[1]))
                     else:
-                        print (np.shape(g[0]), np.std(g[0]), np.average(g[0]))
+                        pass
+                        # print (np.shape(g[0]), np.std(g[0]), np.average(g[0]))
+                        
                 assert(False)
                 '''
 
