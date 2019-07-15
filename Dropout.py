@@ -8,7 +8,7 @@ class Dropout(Layer):
 
     def __init__(self, rate):
         self.rate = rate
-        assert(False)
+        # assert(False)
         # pretty sure need to dropout the output to the LSTM cell itself.
         # which means we need to do dropout inside the cell.
 
@@ -16,6 +16,9 @@ class Dropout(Layer):
 
     def get_weights(self):
         assert (False)
+
+    def params(self):
+        return []
 
     def num_params(self):
         assert (False)
@@ -25,12 +28,14 @@ class Dropout(Layer):
     # saving dropout mask like this is weird...
 
     def forward(self, X):
-        self.dropout_mask = tf.cast(tf.random_uniform(shape=tf.shape(X)) > self.rate, tf.float32)
-        A = X * self.dropout_mask
-        return A, None
+        dropout_mask = tf.cast(tf.random_uniform(shape=tf.shape(X)) > self.rate, tf.float32)
+        A = X * dropout_mask
+        cache = {'dropout': dropout_mask}
+        return A, cache
 
     def backward(self, AI, AO, DO, cache):
-        DI = DO * self.dropout_mask
+        dropout_mask = cache['dropout']
+        DI = DO * dropout_mask
         return DI, []
         
     ###################################################################
