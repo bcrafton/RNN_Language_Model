@@ -102,7 +102,7 @@ class Model:
         labels = tf.argmax(Y, axis=2)
         logits = pred
         
-        E = ((tf.nn.softmax(pred) - Y) / self.batch_size) * tf.reshape(zeros, [self.batch_size, self.time_size, 1])
+        E = (tf.nn.softmax(pred) - Y) * tf.reshape(zeros, [self.batch_size, self.time_size, 1])
         loss = tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * zeros)
 
         for ii in range(self.num_layers-1, -1, -1):

@@ -32,8 +32,8 @@ class Dense(Layer):
         return [(self.name, self.weights), (self.name + "_bias", self.bias)]
 
     def params(self):
-        # return []
-        return [self.weights, self.bias]
+        return []
+        # return [self.weights, self.bias]
 
     def num_params(self):
         weights_size = self.input_size * self.output_size
@@ -66,8 +66,8 @@ class Dense(Layer):
         DI = tf.matmul(DO, tf.transpose(self.weights))
         DI = tf.reshape(DI, [self.batch_size, self.time_size, self.input_size])
         
-        return DI, []
-        # return DI, [(DW, self.weights), (DB, self.bias)]
+        # return DI, []
+        return DI, [(DW, self.weights), (DB, self.bias)]
         
     ###################################################################
 
