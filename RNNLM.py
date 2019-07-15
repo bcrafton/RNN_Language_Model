@@ -213,7 +213,7 @@ class RNNLM(object):
             for ii in range(0, self.num_train_samples, self.batch_size):
                 # print ('%d / %d' % (ii, self.num_train_samples))               
 
-                _loss1, _loss2, _valid_words, global_step, current_learning_rate, _, _params, gvs = sess.run([self.loss1, self.loss2, self.valid_words, self.global_step, self.learning_rate, self.train, self.params, self.grads_and_vars], {self.dropout_rate: 0.0})
+                _loss1, _loss2, _valid_words, global_step, current_learning_rate, _, _params, _grads1, _grads2, gvs = sess.run([self.loss1, self.loss2, self.valid_words, self.global_step, self.learning_rate, self.train, self.params, self.grads1, self.grads2, self.grads_and_vars], {self.dropout_rate: 0.0})
 
                 '''
                 for key in weights.keys():
@@ -256,6 +256,8 @@ class RNNLM(object):
                         
                 assert(False)
                 '''
+
+                # print (len(_grads1), len(_grads2))
 
                 train_loss1 += np.sum(_loss1)
                 train_loss2 += np.sum(_loss2)
