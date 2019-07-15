@@ -95,7 +95,7 @@ class LSTM(Layer):
         return weights
 
     def params(self):
-        # return []
+        return []
 
         wx = [self.Wa_x, self.Wi_x, self.Wf_x, self.Wo_x]
         wh = [self.Wa_h, self.Wi_h, self.Wf_h, self.Wo_h]
@@ -128,7 +128,7 @@ class LSTM(Layer):
         for t in range(self.time_size):
             x = X_T[t]
             dropout = tf.cast(tf.random_uniform(shape=tf.shape(x)) > self.dropout_rate, tf.float32)
-            x = dropout * x
+            # x = dropout * x
 
             if t == 0:
                 a = tanh(   tf.matmul(x, self.Wa_x) + self.ba) 
@@ -265,7 +265,7 @@ class LSTM(Layer):
 
             # dx = tf.Print(dx, [tf.shape(dx), tf.shape(dropout[t])], message='', summarize=1000)               
             lds[t] = ds
-            ldx[t] = dx * dropout[t]
+            ldx[t] = dx # * dropout[t]
 
         ldx = tf.stack(ldx, axis=1)
 
@@ -275,8 +275,8 @@ class LSTM(Layer):
         (dba, self.ba), (dbi, self.bi), (dbf, self.bf), (dbo, self.bo)
         ]
 
-        return ldx, []
-        # return ldx, dw
+        # return ldx, []
+        return ldx, dw
 
     ###################################################################
 
