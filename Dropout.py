@@ -7,10 +7,11 @@ from Layer import Layer
 class Dropout(Layer):
 
     def __init__(self, rate):
-        self.rate = rate
+        self.rate = 1.0 - rate
         # assert(False)
         # pretty sure need to dropout the output to the LSTM cell itself.
         # which means we need to do dropout inside the cell.
+        self.dist = tf.distributions.Bernoulli(probs=self.rate)
 
     ###################################################################
 
@@ -28,7 +29,8 @@ class Dropout(Layer):
     # saving dropout mask like this is weird...
 
     def forward(self, X):
-        dropout_mask = tf.cast(tf.random_uniform(shape=tf.shape(X)) > self.rate, tf.float32)
+        dropout_mask = tf.cast(self.dist.sample(sample_shape=tf.shape(X)), dtype=tf.float32)
+        # dropout_mask = tf.Print(dropout_mask, [tf.count_nonzero(dropout_mask)], message='', summarize=1000)
         A = X * dropout_mask
         cache = {'dropout': dropout_mask}
         return A, cache
