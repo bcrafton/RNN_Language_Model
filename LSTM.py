@@ -280,4 +280,15 @@ class LSTM(Layer):
 
     ###################################################################
 
+    def dfa(self, AI, AO, DO, cache):
+        DI, DW = self.backward(AI, AO, DO, cache)
+        return tf.ones_like(DI), DW  
         
+    ###################################################################
+    
+    
+    
+    
+    
+    
+    

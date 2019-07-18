@@ -68,7 +68,11 @@ class Dense(Layer):
         
         # return DI, []
         return DI, [(DW, self.weights), (DB, self.bias)]
-        
+
+    def dfa(self, AI, AO, DO, cache):
+        DI, DW = self.backward(AI, AO, DO, cache)
+        return tf.ones_like(DI), DW
+
     ###################################################################
 
         

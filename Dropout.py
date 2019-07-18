@@ -40,6 +40,9 @@ class Dropout(Layer):
         DI = DO * dropout_mask
         return DI, []
         
+    def dfa(self, AI, AO, DO, cache):
+        return self.backward(AI, AO, DO, cache)
+        
     ###################################################################
 
 

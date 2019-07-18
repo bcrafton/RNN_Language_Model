@@ -66,6 +66,9 @@ class Embedded(Layer):
         # return None, []
         return None, [(DW, self.weights)]
 
+    def dfa(self, AI, AO, DO, cache):
+        return self.backward(AI, AO, DO, cache)
+
     ###################################################################
         
         

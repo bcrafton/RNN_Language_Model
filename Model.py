@@ -123,7 +123,54 @@ class Model:
         # grads_and_vars = zip(clipped_gradients, var)
                 
         return grad, var, loss
-              
+
+    def dfa(self, X, Y):
+        A = [None] * self.num_layers
+        C = [None] * self.num_layers
+        D = [None] * self.num_layers
+        grad = []
+        var = []
+        
+        for ii in range(self.num_layers):
+            l = self.layers[ii]
+            if ii == 0:
+                A[ii], C[ii] = l.forward(X)
+            else:
+                A[ii], C[ii] = l.forward(A[ii-1])
+
+
+        pred = A[self.num_layers-1]
+
+        # E = (tf.nn.softmax(pred) - Y) / N
+        # loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Y, logits=pred)
+        
+        zeros = tf.cast(tf.sign(X), dtype=tf.float32)
+        
+        labels = tf.argmax(Y, axis=2)
+        logits = pred
+        
+        E = (tf.nn.softmax(pred) - Y) * tf.reshape(zeros, [self.batch_size, self.time_size, 1])
+        loss = tf.reduce_sum(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * zeros)
+
+        for ii in range(self.num_layers-1, -1, -1):
+            l = self.layers[ii]
+            
+            if (ii == self.num_layers-1):
+                D[ii], GV = l.dfa(A[ii-1], A[ii], E, C[ii])
+            elif (ii == 0):
+                D[ii], GV = l.dfa(X, A[ii], D[ii+1], C[ii])
+            else:
+                D[ii], GV = l.dfa(A[ii-1], A[ii], D[ii+1], C[ii])
+                
+            for (g, v) in GV:
+                grad.append(g)
+                var.append(v)
+                
+        # clipped_gradients, _ = tf.clip_by_global_norm(grad, 5.0)
+        # grads_and_vars = zip(clipped_gradients, var)
+                
+        return grad, var, loss
+
     def predict(self, X):
         A = [None] * self.num_layers
         
@@ -135,11 +182,22 @@ class Model:
                 A[ii], _ = l.forward(A[ii-1])
                 
         return A[self.num_layers-1]
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

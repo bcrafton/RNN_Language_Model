@@ -22,5 +22,8 @@ class Layer:
         
     def backward(self, AI, AO, DO, cache):    
         assert(False)
-                
+
+    def dfa(self, AI, AO, DO, cache):
+        assert(False)
+
     ###################################################################   
