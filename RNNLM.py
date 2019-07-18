@@ -93,14 +93,14 @@ class RNNLM(object):
         self.input_embedding_mat = tf.get_variable("input_embedding_mat", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
         self.input_embedded = tf.nn.embedding_lookup(self.input_embedding_mat, self.input_batch)
 
-        with tf.variable_scope('l2'):
+        with tf.variable_scope('l1'):
             cell = tf.contrib.rnn.LSTMCell(self.num_hidden_units, state_is_tuple=True)
             cell = tf.contrib.rnn.DropoutWrapper(cell, input_keep_prob=self.dropout_rate)
             self.cell1 = cell
-            outputs1, _ = tf.nn.dynamic_rnn(cell=self.cell1, inputs=self.input_embedded, dtype=tf.float32)
+            self.outputs1, _ = tf.nn.dynamic_rnn(cell=self.cell1, inputs=self.input_embedded, dtype=tf.float32)
             self.output_embedding_mat1 = tf.get_variable("output_embedding_mat1", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
             self.output_embedding_bias1 = tf.get_variable("output_embedding_bias1", [self.vocab_size], dtype=tf.float32)
-            logits1 = tf.matmul(outputs1, self.output_embedding_mat1) + self.output_embedding_bias1
+            logits1 = tf.matmul(self.outputs1, tf.transpose(self.output_embedding_mat1)) + self.output_embedding_bias1
             self.logits1 = tf.reshape(logits1, [-1, vocab_size])
             self.loss1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=self.logits1) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
             self.params1 = tf.trainable_variables('l1')
@@ -112,10 +112,10 @@ class RNNLM(object):
             cell = tf.contrib.rnn.LSTMCell(self.num_hidden_units, state_is_tuple=True)
             cell = tf.contrib.rnn.DropoutWrapper(cell, input_keep_prob=self.dropout_rate)
             self.cell2 = cell
-            outputs2, _ = tf.nn.dynamic_rnn(cell=self.cell2, inputs=self.outputs1, dtype=tf.float32)
+            self.outputs2, _ = tf.nn.dynamic_rnn(cell=self.cell2, inputs=self.outputs1, dtype=tf.float32)
             self.output_embedding_mat2 = tf.get_variable("output_embedding_mat2", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
             self.output_embedding_bias2 = tf.get_variable("output_embedding_bias2", [self.vocab_size], dtype=tf.float32)
-            logits2 = tf.matmul(outputs2, self.output_embedding_mat2) + self.output_embedding_bias2
+            logits2 = tf.matmul(self.outputs2, tf.transpose(self.output_embedding_mat2)) + self.output_embedding_bias2
             self.logits2 = tf.reshape(logits2, [-1, vocab_size])
             self.loss2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=self.logits2) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
             self.params2 = tf.trainable_variables('l2')
@@ -126,7 +126,8 @@ class RNNLM(object):
 
         self.gradients = self.gradients1 + self.gradients2
         self.params = self.params1 + self.params2
-        self.train = tf.train.AdagradOptimizer(self.learning_rate).apply_gradients(zip(self.gradients, params), global_step=self.global_step)
+        self.train = tf.train.AdagradOptimizer(self.learning_rate).apply_gradients(zip(self.gradients, self.params), global_step=self.global_step)
+        self.loss = self.loss2
 
     def batch_train(self, sess, saver):
 
