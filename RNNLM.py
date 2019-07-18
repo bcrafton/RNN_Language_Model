@@ -82,58 +82,51 @@ class RNNLM(object):
         self.validation_init_op = iterator.make_initializer(validation_dataset)
         self.test_init_op = iterator.make_initializer(test_dataset)
 
-        # Input embedding mat
-        self.input_embedding_mat = tf.get_variable("input_embedding_mat", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
-        self.input_embedded = tf.nn.embedding_lookup(self.input_embedding_mat, self.input_batch)
-
-        # LSTM cell
-        cell = tf.contrib.rnn.LSTMCell(self.num_hidden_units, state_is_tuple=True)
-        cell = tf.contrib.rnn.DropoutWrapper(cell, input_keep_prob=self.dropout_rate)
-        cell = tf.contrib.rnn.MultiRNNCell(cells=[cell]*self.num_layers, state_is_tuple=True)
-
-        self.cell = cell
-
-        # Output embedding
-        self.output_embedding_mat = tf.get_variable("output_embedding_mat", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
-        self.output_embedding_bias = tf.get_variable("output_embedding_bias", [self.vocab_size], dtype=tf.float32)
+        ######################################
 
         non_zero_weights = tf.sign(self.input_batch)
         self.valid_words = tf.reduce_sum(non_zero_weights)
 
-        # self.valid_words = tf.Print(self.valid_words, [self.valid_words], message='', summarize=1000)
-
-        # Compute sequence length
-        def get_length(non_zero_place):
-            real_length = tf.reduce_sum(non_zero_place, 1)
-            real_length = tf.cast(real_length, tf.int32)
-            return real_length
-
-        batch_length = get_length(non_zero_weights)
-
-        # The shape of outputs is [batch_size, max_length, num_hidden_units]
-        outputs, _ = tf.nn.dynamic_rnn(cell=self.cell, inputs=self.input_embedded, sequence_length=batch_length, dtype=tf.float32)
-
-        def output_embedding(current_output):
-            return tf.add(tf.matmul(current_output, tf.transpose(self.output_embedding_mat)), self.output_embedding_bias)
-
-        # To compute the logits
         labels = tf.reshape(self.output_batch, [-1])
-        
-        logits = tf.map_fn(output_embedding, outputs)
-        logits = tf.reshape(logits, [-1, vocab_size])
-        loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
 
-        self.loss = loss
+        # Input embedding mat
+        self.input_embedding_mat = tf.get_variable("input_embedding_mat", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
+        self.input_embedded = tf.nn.embedding_lookup(self.input_embedding_mat, self.input_batch)
 
-        # Train
-        params = tf.trainable_variables()
-        self.params = params
+        with tf.variable_scope('l2'):
+            cell = tf.contrib.rnn.LSTMCell(self.num_hidden_units, state_is_tuple=True)
+            cell = tf.contrib.rnn.DropoutWrapper(cell, input_keep_prob=self.dropout_rate)
+            self.cell1 = cell
+            outputs1, _ = tf.nn.dynamic_rnn(cell=self.cell1, inputs=self.input_embedded, dtype=tf.float32)
+            self.output_embedding_mat1 = tf.get_variable("output_embedding_mat1", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
+            self.output_embedding_bias1 = tf.get_variable("output_embedding_bias1", [self.vocab_size], dtype=tf.float32)
+            logits1 = tf.matmul(outputs1, self.output_embedding_mat1) + self.output_embedding_bias1
+            self.logits1 = tf.reshape(logits1, [-1, vocab_size])
+            self.loss1 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=self.logits1) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
+            self.params1 = tf.trainable_variables('l1')
+            gradients1 = tf.gradients(self.loss1, self.params1, colocate_gradients_with_ops=True)
+            self.gradients1, _ = tf.clip_by_global_norm(gradients1, self.max_gradient_norm)
+            
 
-        opt = tf.train.AdagradOptimizer(self.learning_rate)
-        gradients = tf.gradients(self.loss, params, colocate_gradients_with_ops=True)
-        self.clipped_gradients, _ = tf.clip_by_global_norm(gradients, self.max_gradient_norm)
-        # self.clipped_gradients = gradients
-        self.updates = opt.apply_gradients(zip(self.clipped_gradients, params), global_step=self.global_step)
+        with tf.variable_scope('l2'):
+            cell = tf.contrib.rnn.LSTMCell(self.num_hidden_units, state_is_tuple=True)
+            cell = tf.contrib.rnn.DropoutWrapper(cell, input_keep_prob=self.dropout_rate)
+            self.cell2 = cell
+            outputs2, _ = tf.nn.dynamic_rnn(cell=self.cell2, inputs=self.outputs1, dtype=tf.float32)
+            self.output_embedding_mat2 = tf.get_variable("output_embedding_mat2", [self.vocab_size, self.num_hidden_units], dtype=tf.float32)
+            self.output_embedding_bias2 = tf.get_variable("output_embedding_bias2", [self.vocab_size], dtype=tf.float32)
+            logits2 = tf.matmul(outputs2, self.output_embedding_mat2) + self.output_embedding_bias2
+            self.logits2 = tf.reshape(logits2, [-1, vocab_size])
+            self.loss2 = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=self.logits2) * tf.cast(tf.reshape(non_zero_weights, [-1]), tf.float32)
+            self.params2 = tf.trainable_variables('l2')
+            gradients2 = tf.gradients(self.loss2, self.params2, colocate_gradients_with_ops=True)
+            self.gradients2, _ = tf.clip_by_global_norm(gradients2, self.max_gradient_norm)
+            
+        ######################################
+
+        self.gradients = self.gradients1 + self.gradients2
+        self.params = self.params1 + self.params2
+        self.train = tf.train.AdagradOptimizer(self.learning_rate).apply_gradients(zip(self.gradients, params), global_step=self.global_step)
 
     def batch_train(self, sess, saver):
 
@@ -148,7 +141,7 @@ class RNNLM(object):
             for ii in range(0, self.num_train_samples, self.batch_size):
                 # print ('%d / %d' % (ii, self.num_train_samples))               
 
-                _loss, _valid_words, global_step, current_learning_rate, _, _params, grads = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.updates, self.params, self.clipped_gradients], {self.dropout_rate: 1.0})
+                _loss, _valid_words, global_step, current_learning_rate, _, _params, grads = sess.run([self.loss, self.valid_words, self.global_step, self.learning_rate, self.train, self.params, self.gradients], {self.dropout_rate: 1.0})
 
                 '''
                 for p in _params:
