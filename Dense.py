@@ -25,6 +25,9 @@ class Dense(Layer):
         self.bias = tf.Variable(bias, dtype=tf.float32)
         self.weights = tf.Variable(weights, dtype=tf.float32)
 
+        fb = init_matrix(size=(self.input_size, self.output_size), init=self.init)
+        self.fb = tf.Variable(fb, dtype=tf.float32)
+
     ###################################################################
         
     def get_weights(self):
@@ -70,8 +73,19 @@ class Dense(Layer):
         return DI, [(DW, self.weights), (DB, self.bias)]
 
     def dfa(self, AI, AO, DO, cache):
-        DI, DW = self.backward(AI, AO, DO, cache)
-        return tf.ones_like(DI), DW
+        AI = tf.reshape(AI, [self.batch_size * self.time_size, self.input_size])
+        AO = tf.reshape(AO, [self.batch_size * self.time_size, self.output_size])
+        DO = tf.reshape(DO, [self.batch_size * self.time_size, self.output_size])
+        DO = DO * self.activation.gradient(AO)
+
+        DW = tf.matmul(tf.transpose(AI), DO)
+        DB = tf.reduce_sum(DO, axis=0)
+
+        DI = tf.matmul(DO, tf.transpose(self.fb))
+        DI = tf.reshape(DI, [self.batch_size, self.time_size, self.input_size])
+
+        # return DI, []
+        return DI, [(DW, self.weights), (DB, self.bias)]
 
     ###################################################################
 

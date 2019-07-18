@@ -42,7 +42,7 @@ class RNNLM(object):
 
         # We set a dynamic learining rate, it decays every time the model has gone through 150 batches.
         # A minimum learning rate has also been set.
-        self.learning_rate = tf.train.exponential_decay(initial_learning_rate, self.global_step, 150, 0.96, staircase=True)
+        self.learning_rate = tf.train.exponential_decay(initial_learning_rate, self.global_step, 150, 0.985, staircase=True)
         self.learning_rate = tf.cond(tf.less(self.learning_rate, final_learning_rate), lambda: tf.constant(final_learning_rate), lambda: self.learning_rate)
 
         self.dropout_rate = tf.placeholder(tf.float32, name="dropout_rate")
@@ -176,7 +176,7 @@ class RNNLM(object):
         X = self.input_batch
         Y = tf.one_hot(self.output_batch, depth=self.vocab_size, axis=-1)
         
-        self.grads1, self.params1, self.loss1 = self.model.train(X=X, Y=Y)
+        self.grads1, self.params1, self.loss1 = self.model.dfa(X=X, Y=Y)
 
         #############################3
         
